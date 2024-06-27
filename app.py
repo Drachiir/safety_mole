@@ -29,6 +29,8 @@ class Legion(commands.Bot):
     
     async def on_ready(self):
         print(f'"{self.user.display_name}" is now running!')
+        game = discord.CustomActivity("Keeping the discord safe")
+        await self.change_presence(activity=game)
 
 
 if __name__ == "__main__":
