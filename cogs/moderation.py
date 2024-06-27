@@ -1,8 +1,9 @@
 import asyncio
 import datetime
 import json
+import pathlib
 import typing
-
+from pathlib import Path
 import discord
 from discord import app_commands
 from discord.ext import commands
@@ -10,7 +11,14 @@ from discord.ext import commands
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
     f.close()
-
+    
+def get_channels(guild_id):
+    try:
+        with open(f"Files/Config/{guild_id}.json", "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
+    
 class Moderation(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
@@ -25,7 +33,11 @@ class Moderation(commands.Cog):
         await interaction.guild.ban(user, reason=reason, delete_message_days=delete_message_days)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** banned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been banned for {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -45,7 +57,11 @@ class Moderation(commands.Cog):
         await interaction.guild.unban(user, reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unbanned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unbanned.")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -67,7 +83,11 @@ class Moderation(commands.Cog):
         await interaction.guild.unban(user)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** soft-banned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked for {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -87,7 +107,11 @@ class Moderation(commands.Cog):
         await interaction.guild.kick(user, reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** kicked **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked for {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -113,11 +137,15 @@ class Moderation(commands.Cog):
         except Exception:
             await interaction.followup.send(f"{user.display_name} has DMs disabled, use /public-warn instead.", ephemeral=True)
             return
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
     
-    @app_commands.command(name="public-warn", description="Publicly warn a user in #Bot Messages")
+    @app_commands.command(name="public-warn", description="Publicly warn a user in Public channel")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(user="Select a user to be warned", reason="Warning reason")
@@ -125,9 +153,13 @@ class Moderation(commands.Cog):
         await interaction.response.defer(thinking=True, ephemeral=True)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** publicly warned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
-        botmsgs = await self.bot.fetch_channel(secret_file["botmsgid"])
+        botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
         await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
         await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
     
@@ -145,7 +177,11 @@ class Moderation(commands.Cog):
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** muted **{user.display_name}**"
                                                           f"\n**Duration:** {duration}"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -164,7 +200,11 @@ class Moderation(commands.Cog):
         await user.timeout(datetime.timedelta(seconds=0), reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unmuted **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unmuted.\n")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -184,9 +224,28 @@ class Moderation(commands.Cog):
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** sent a proxy message to {channel.mention}"
                                                           f"\n**Message link:**{message_data.jump_url}"
                                                           f"\n**Message content:**\n{message}")
-        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"Message has been sent.", ephemeral=True)
+    
+    @app_commands.command(name="setup", description="Select channels for public-warn and mod-logs")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    @app_commands.describe(public_warn_channel="Select a channel for Public warnings", mod_logs="Select a channel for Mod-logs")
+    async def setup(self, interaction: discord.Interaction, public_warn_channel: discord.TextChannel, mod_logs: discord.TextChannel):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        channels = {
+            "public_warn": public_warn_channel.id,
+            "mod_logs": mod_logs.id
+        }
+        with open(f"Files/Config/{interaction.guild.id}.json", "w") as f:
+            json.dump(channels, f)
+            f.close()
+        await interaction.followup.send(f"Setup done.", ephemeral=True)
     
 async def setup(bot:commands.Bot):
     await bot.add_cog(Moderation(bot))
