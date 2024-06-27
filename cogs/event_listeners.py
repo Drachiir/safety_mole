@@ -15,12 +15,11 @@ class Listener(commands.Cog):
                 await asyncio.sleep(1)
             message = thread.starter_message
             if not message.attachments:
-                await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}.\n"
-                                  f"But you have not attached any files. In order to help you, we may need Log files and/or Screenshots/Video(s) of the bug happening.\n"
-                                  f"Please check out the bug-report guidelines: https://discord.com/channels/159363816570880012/1064534565386985513/1064534565386985513"
-                                  f"*If this does not apply to your issue you can ignore this*")
+                await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}\n"
+                                  f"You have not attached any files.\nIn order to help you, we may need Log files and/or Screenshots/Video(s) of the bug happening.\n"
+                                  f"Please check out the bug-report guidelines: https://discord.com/channels/159363816570880012/1064534565386985513/1064534565386985513")
             else:
-                await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}.\n"
+                await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}\n"
                                   f"Please make sure your post follows the guidelines, if you haven't already\nhttps://discord.com/channels/159363816570880012/1064534565386985513/1064534565386985513")
 
 async def setup(bot:commands.Bot):
