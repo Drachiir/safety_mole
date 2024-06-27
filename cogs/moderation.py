@@ -17,10 +17,10 @@ class Moderation(commands.Cog):
     @app_commands.command(name="ban", description="Permanently ban a user")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be banned", reason="Reason for the ban")
-    async def ban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']):
+    @app_commands.describe(user="Select a user to be banned", reason="Reason for the ban", delete_message_days="Delete messages from this user within X days. Default 7")
+    async def ban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']="7days"):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        delete_message_days = int(delete_message_days)
+        delete_message_days = int(delete_message_days.replace("days", ""))
         await interaction.guild.ban(user, reason=reason, delete_message_days=delete_message_days)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** banned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
@@ -38,10 +38,10 @@ class Moderation(commands.Cog):
     @app_commands.command(name="soft-ban", description="Kicks a user and deletes their messages")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be soft-banned", reason="Reason for the soft-ban")
-    async def softban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']):
+    @app_commands.describe(user="Select a user to be soft-banned", reason="Reason for the soft-ban", delete_message_days="Delete messages from this user within X days. Default 7")
+    async def softban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']="7days"):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        delete_message_days = int(delete_message_days)
+        delete_message_days = int(delete_message_days.replace("days", ""))
         await interaction.guild.ban(user, reason=reason, delete_message_days=delete_message_days)
         await interaction.guild.unban(user)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** soft-banned **{user.display_name}**"
