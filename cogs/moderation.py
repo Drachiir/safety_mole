@@ -159,14 +159,14 @@ class Moderation(commands.Cog):
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(user="Select a user to be unmuted", reason="Unmute reason")
-    async def mute(self, interaction: discord.Interaction, user: discord.Member, reason: str):
+    async def unmute(self, interaction: discord.Interaction, user: discord.Member, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
         await user.timeout(datetime.timedelta(seconds=0), reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unmuted **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
         modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
         await modlogs.send(embed=embed)
-        embed2 = discord.Embed(color=0xDE1919, title=f"You have been unmuted.\n")
+        embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unmuted.\n")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         try:
             await user.send(embed=embed2)
