@@ -1,3 +1,4 @@
+import asyncio
 import datetime
 import json
 import typing
@@ -34,6 +35,26 @@ class Moderation(commands.Cog):
             await interaction.followup.send(f"{user.display_name} has been banned, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
             return
         await interaction.followup.send(f"{user.display_name} has been banned.", ephemeral=True)
+    
+    @app_commands.command(name="unban", description="Unban a user")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    @app_commands.describe(user="Select a user to be unbanned", reason="Reason for the unban")
+    async def ban(self, interaction: discord.Interaction, user: discord.User, reason: str):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        await interaction.guild.unban(user, reason=reason)
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unbanned **{user.display_name}**"
+                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        await modlogs.send(embed=embed)
+        embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unbanned.")
+        embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+        try:
+            await user.send(embed=embed2)
+        except Exception:
+            await interaction.followup.send(f"{user.display_name} has been unbanned, but has DMs disabled so i couldn't inform them about being unbanned.", ephemeral=True)
+            return
+        await interaction.followup.send(f"{user.display_name} has been unbanned.", ephemeral=True)
     
     @app_commands.command(name="soft-ban", description="Kicks a user and deletes their messages")
     @app_commands.guild_only()
@@ -110,7 +131,7 @@ class Moderation(commands.Cog):
         await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
         await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
     
-    @app_commands.command(name="mute", description="mutes warn a user")
+    @app_commands.command(name="mute", description="Mutes a user")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(user="Select a user to be muted", reason="Mute reason")
@@ -132,7 +153,26 @@ class Moderation(commands.Cog):
             await user.send(embed=embed2)
         except Exception:
             pass
-        await interaction.followup.send(f"{user.display_name} has been timed out.", ephemeral=True)
+        await interaction.followup.send(f"{user.display_name} has been muted for {duration}.", ephemeral=True)
+    
+    @app_commands.command(name="unmute", description="Unmutes a user")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    @app_commands.describe(user="Select a user to be unmuted", reason="Unmute reason")
+    async def mute(self, interaction: discord.Interaction, user: discord.Member, reason: str):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        await user.timeout(datetime.timedelta(seconds=0), reason=reason)
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unmuted **{user.display_name}**"
+                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+        modlogs = await self.bot.fetch_channel(secret_file["modlogsid"])
+        await modlogs.send(embed=embed)
+        embed2 = discord.Embed(color=0xDE1919, title=f"You have been unmuted.\n")
+        embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+        try:
+            await user.send(embed=embed2)
+        except Exception:
+            pass
+        await interaction.followup.send(f"{user.display_name} has been unmuted.", ephemeral=True)
     
     @app_commands.command(name="proxy", description="Uses Safety Mole to write a message in a given channel.")
     @app_commands.guild_only()
