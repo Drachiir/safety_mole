@@ -51,9 +51,10 @@ class Moderation(commands.Cog):
     @app_commands.command(name="unban", description="Unban a user")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be unbanned", reason="Reason for the unban")
-    async def ban(self, interaction: discord.Interaction, user: discord.User, reason: str):
+    @app_commands.describe(userid="Enter userid to be unbanned", reason="Reason for the unban")
+    async def ban(self, interaction: discord.Interaction, userid: int, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
+        user = await self.bot.fetch_user(userid)
         await interaction.guild.unban(user, reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unbanned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
@@ -80,6 +81,7 @@ class Moderation(commands.Cog):
         await interaction.response.defer(thinking=True, ephemeral=True)
         delete_message_days = int(delete_message_days.replace("days", ""))
         await interaction.guild.ban(user, reason=reason, delete_message_days=delete_message_days)
+        await asyncio.sleep(1)
         await interaction.guild.unban(user)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** soft-banned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
