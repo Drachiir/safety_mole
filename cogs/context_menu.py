@@ -56,7 +56,7 @@ class ContextDelete(commands.Cog):
             callback=self.contextproxy
         )
         self.ctx_mute = app_commands.ContextMenu(
-            name='Mute',
+            name='Mute User',
             callback=self.contextmute
         )
         self.bot.tree.add_command(self.ctx_delete)
