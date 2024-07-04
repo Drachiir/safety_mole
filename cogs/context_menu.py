@@ -4,7 +4,7 @@ import discord
 from discord import app_commands, ui, Interaction
 from discord._types import ClientT
 from discord.ext import commands
-import cogs.moderation
+import cogs.moderation as modcog
 
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
@@ -42,7 +42,7 @@ class ContextDelete(commands.Cog):
                                                           f"\n**User id**: {message.author.id}"
                                                           f"\n**Channel**: {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
-        channel_ids = cogs.moderation.get_channels(interaction.guild.id)
+        channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
@@ -58,7 +58,7 @@ class ContextDelete(commands.Cog):
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** banned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        channel_ids = cogs.moderation.get_channels(interaction.guild.id)
+        channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
