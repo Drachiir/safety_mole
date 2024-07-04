@@ -9,6 +9,13 @@ class Listener(commands.Cog):
         self.bot = bot
     
     @commands.Cog.listener()
+    async def on_message(self, message: discord.Message):
+        if message.guild:
+            return
+        await message.channel.send("This Bot does not accept messages. For ban appeals please visit https://legiontd2.com/bans")
+        return
+    
+    @commands.Cog.listener()
     async def on_thread_create(self, thread:discord.Thread):
         if thread.parent.name == "bugs-and-troubleshooting":
             while not thread.starter_message:

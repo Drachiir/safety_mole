@@ -161,29 +161,36 @@ class Moderation(commands.Cog):
         try:
             await user.send(embed=embed2)
         except Exception:
-            await interaction.followup.send(f"{user.display_name} has DMs disabled, use /public-warn instead.", ephemeral=True)
+            #PUBLIC WARN
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** publicly warned **{user.display_name}**"
+                                                              f"\n**User id**: {user.id}\n**Reason:** {reason}")
+            modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+            await modlogs.send(embed=embed)
+            botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
+            await botmsgs.send(f"{user.mention} you have been warned.")
+            await interaction.followup.send(f"{user.display_name} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
-        await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
+        await interaction.followup.send(f"{user.display_name} has been privately warned.", ephemeral=True)
     
-    @app_commands.command(name="public-warn", description="Publicly warn a user in Public channel")
-    @app_commands.guild_only()
-    @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be warned", reason="Warning reason")
-    async def publicwarn(self, interaction: discord.Interaction, user: discord.User, reason: str):
-        await interaction.response.defer(thinking=True, ephemeral=True)
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** publicly warned **{user.display_name}**"
-                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
-        channel_ids = get_channels(interaction.guild.id)
-        if not channel_ids:
-            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
-            return
-        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
-        await modlogs.send(embed=embed)
-        botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
-        await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
-        await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
+    # @app_commands.command(name="public-warn", description="Publicly warn a user in Public channel")
+    # @app_commands.guild_only()
+    # @app_commands.default_permissions(ban_members=True)
+    # @app_commands.describe(user="Select a user to be warned", reason="Warning reason")
+    # async def publicwarn(self, interaction: discord.Interaction, user: discord.User, reason: str):
+    #     await interaction.response.defer(thinking=True, ephemeral=True)
+    #     embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** publicly warned **{user.display_name}**"
+    #                                                       f"\n**User id**: {user.id}\n**Reason:** {reason}")
+    #     channel_ids = get_channels(interaction.guild.id)
+    #     if not channel_ids:
+    #         await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+    #         return
+    #     modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+    #     await modlogs.send(embed=embed)
+    #     botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
+    #     await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
+    #     await interaction.followup.send(f"{user.display_name} has been warned.", ephemeral=True)
     
     @app_commands.command(name="mute", description="Mutes a user")
     @app_commands.guild_only()
