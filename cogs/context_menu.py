@@ -1,5 +1,8 @@
 import asyncio
 import json
+import datetime
+import typing
+from datetime import timedelta
 import discord
 from discord import app_commands, ui, Interaction
 from discord._types import ClientT
@@ -12,6 +15,14 @@ with open('Files/json/Secrets.json') as f:
 
 class ContextInput(ui.Modal):
     answer = ui.TextInput(label='Reason', style=discord.TextStyle.short)
+    
+    async def on_submit(self, interaction: Interaction[ClientT], /) -> None:
+        await interaction.response.defer()
+
+
+class ContextMuteInput(ui.Modal):
+    duration = ui.TextInput(label='Duration', style=discord.TextStyle.short, max_length=3, placeholder="m = minutes, h = hours, d= days")
+    reason = ui.TextInput(label='Reason', style=discord.TextStyle.short)
     
     async def on_submit(self, interaction: Interaction[ClientT], /) -> None:
         await interaction.response.defer()
@@ -44,12 +55,17 @@ class ContextDelete(commands.Cog):
             name='Proxy Reply',
             callback=self.contextproxy
         )
+        self.ctx_mute = app_commands.ContextMenu(
+            name='Mute',
+            callback=self.contextmute
+        )
         self.bot.tree.add_command(self.ctx_delete)
         self.bot.tree.add_command(self.ctx_ban)
         self.bot.tree.add_command(self.ctx_soft)
         self.bot.tree.add_command(self.ctx_kick)
         self.bot.tree.add_command(self.ctx_warn)
         self.bot.tree.add_command(self.ctx_proxy)
+        self.bot.tree.add_command(self.ctx_mute)
         
     async def cog_unload(self) -> None:
         self.bot.tree.remove_command(self.ctx_delete.name, type=self.ctx_delete.type)
@@ -58,6 +74,7 @@ class ContextDelete(commands.Cog):
         self.bot.tree.remove_command(self.ctx_kick.name, type=self.ctx_kick.type)
         self.bot.tree.remove_command(self.ctx_warn.name, type=self.ctx_warn.type)
         self.bot.tree.remove_command(self.ctx_proxy.name, type=self.ctx_proxy.type)
+        self.bot.tree.remove_command(self.ctx_mute.name, type=self.ctx_mute.type)
     
     @app_commands.default_permissions(ban_members=True)
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
@@ -183,7 +200,7 @@ class ContextDelete(commands.Cog):
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
-            await botmsgs.send(f"{user.mention} you have been warned.")
+            await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
             await interaction.followup.send(f"{user.display_name} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
@@ -207,6 +224,51 @@ class ContextDelete(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"Message has been sent.", ephemeral=True)
+
+    @app_commands.default_permissions(ban_members=True)
+    async def contextmute(self, interaction: discord.Interaction, user: discord.Member):
+        context_modal = ContextMuteInput(title="Enter duration e.g 60m")
+        await interaction.response.send_modal(context_modal)
+        await context_modal.wait()
+        duration = context_modal.duration.value
+        reason = context_modal.reason.value
+        print(duration)
+        if duration[-1] not in ["m","h","d"]:
+            await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"
+                                            f"e.g. 60m", ephemeral=True)
+            return
+        try:
+            if duration.endswith("m"):
+                duration_dt = datetime.timedelta(minutes=int(duration.replace("m", "")))
+            elif duration.endswith("h"):
+                duration_dt = datetime.timedelta(minutes=int(duration.replace("h", "")))
+            else:
+                duration_dt = datetime.timedelta(days=int(duration.replace("d", "")))
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** muted **{user.display_name}**"
+                                                              f"\n**Duration:** {duration}"
+                                                              f"\n**User id**: {user.id}\n**Reason:** {reason}")
+        except Exception:
+            await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"
+                                            f"e.g. 1d", ephemeral=True)
+            return
+        channel_ids = modcog.get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        try:
+            await user.timeout(duration_dt, reason=reason)
+        except Exception:
+            await interaction.followup.send(f"Cannot mute {user.display_name}.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        await modlogs.send(embed=embed)
+        embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
+        embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+        try:
+            await user.send(embed=embed2)
+        except Exception:
+            pass
+        await interaction.followup.send(f"{user.display_name} has been muted for {duration}.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):

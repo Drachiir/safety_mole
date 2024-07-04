@@ -167,7 +167,7 @@ class Moderation(commands.Cog):
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
-            await botmsgs.send(f"{user.mention} you have been warned.")
+            await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
             await interaction.followup.send(f"{user.display_name} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
