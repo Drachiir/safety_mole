@@ -25,6 +25,7 @@ class ContextDelete(commands.Cog):
         await message.delete()
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** deleted a message from **{message.author.display_name}**"
                                                           f"\n**User id**: {message.author.id}"
+                                                          f"\n**Channel**: {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
         channel_ids = cogs.moderation.get_channels(interaction.guild.id)
         if not channel_ids:
