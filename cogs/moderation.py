@@ -54,7 +54,11 @@ class Moderation(commands.Cog):
     @app_commands.describe(userid="Enter userid to be unbanned", reason="Reason for the unban")
     async def ban(self, interaction: discord.Interaction, userid: int, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        user = await self.bot.fetch_user(userid)
+        try:
+            user = await self.bot.fetch_user(userid)
+        except discord.NotFound:
+            await interaction.followup.send(f"User not found.", ephemeral=True)
+            return
         await interaction.guild.unban(user, reason=reason)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** unbanned **{user.display_name}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")

@@ -2,6 +2,7 @@ import json
 import discord
 from discord import app_commands
 from discord.ext import commands
+import cogs.moderation
 
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
@@ -23,9 +24,14 @@ class ContextDelete(commands.Cog):
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
         await message.delete()
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** deleted a message from **{message.author.display_name}**"
+                                                          f"\n**User id**: {message.author.id}"
                                                           f"\n**Message content:**\n{message.content}")
-        channel = await self.bot.fetch_channel(secret_file["modlogsid"])
-        await channel.send(embed=embed)
+        channel_ids = cogs.moderation.get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        await modlogs.send(embed=embed)
         await interaction.response.send_message("Message deleted", ephemeral=True)
 
 async def setup(bot:commands.Bot):
