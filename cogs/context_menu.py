@@ -31,34 +31,14 @@ class ContextMuteInput(ui.Modal):
 class ContextDelete(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
-        self.ctx_delete = app_commands.ContextMenu(
-            name='Delete Message',
-            callback=self.delete
-        )
-        self.ctx_ban = app_commands.ContextMenu(
-            name='Ban User',
-            callback=self.contextban
-        )
-        self.ctx_soft = app_commands.ContextMenu(
-            name='Soft Ban User',
-            callback=self.contextsoftban
-        )
-        self.ctx_kick = app_commands.ContextMenu(
-            name='Kick User',
-            callback=self.contextkick
-        )
-        self.ctx_warn = app_commands.ContextMenu(
-            name='Warn User',
-            callback=self.contextwarn
-        )
-        self.ctx_proxy = app_commands.ContextMenu(
-            name='Proxy Reply',
-            callback=self.contextproxy
-        )
-        self.ctx_mute = app_commands.ContextMenu(
-            name='Mute User',
-            callback=self.contextmute
-        )
+        self.ctx_delete = app_commands.ContextMenu(name='Delete Message',callback=self.delete)
+        self.ctx_ban = app_commands.ContextMenu(name='Ban User',callback=self.contextban)
+        self.ctx_soft = app_commands.ContextMenu(name='Soft Ban User',callback=self.contextsoftban)
+        self.ctx_kick = app_commands.ContextMenu(name='Kick User',callback=self.contextkick)
+        self.ctx_warn = app_commands.ContextMenu(name='Warn User',callback=self.contextwarn)
+        self.ctx_proxy = app_commands.ContextMenu(name='Proxy Reply',callback=self.contextproxy)
+        self.ctx_mute = app_commands.ContextMenu(name='Mute User',callback=self.contextmute)
+        #Add commands to command tree
         self.bot.tree.add_command(self.ctx_delete)
         self.bot.tree.add_command(self.ctx_ban)
         self.bot.tree.add_command(self.ctx_soft)
@@ -79,7 +59,7 @@ class ContextDelete(commands.Cog):
     @app_commands.default_permissions(ban_members=True)
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
         await message.delete()
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** deleted a message from **{message.author.display_name}**"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{message.author.mention}**"
                                                           f"\n**User id**: {message.author.id}"
                                                           f"\n**Channel**: {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
@@ -97,7 +77,7 @@ class ContextDelete(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** banned **{user.display_name}**"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
@@ -106,7 +86,7 @@ class ContextDelete(commands.Cog):
         try:
             await interaction.guild.ban(user, reason=reason)
         except Exception:
-            await interaction.followup.send(f"Cannot ban {user.display_name}.", ephemeral=True)
+            await interaction.followup.send(f"Cannot ban {user.mention}.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
@@ -115,9 +95,9 @@ class ContextDelete(commands.Cog):
         try:
             await user.send(embed=embed2)
         except Exception:
-            await interaction.followup.send(f"{user.display_name} has been banned, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
+            await interaction.followup.send(f"{user.mention} has been banned, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
             return
-        await interaction.followup.send(f"{user.display_name} has been banned.", ephemeral=True)
+        await interaction.followup.send(f"{user.mention} has been banned.", ephemeral=True)
     
     @app_commands.default_permissions(ban_members=True)
     async def contextsoftban(self, interaction: discord.Interaction, user: discord.User):
@@ -125,7 +105,7 @@ class ContextDelete(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** soft-banned **{user.display_name}**"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** soft-banned **{user.mention}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
@@ -136,7 +116,7 @@ class ContextDelete(commands.Cog):
             await asyncio.sleep(1)
             await interaction.guild.unban(user)
         except Exception:
-            await interaction.followup.send(f"Cannot soft-ban {user.display_name}.", ephemeral=True)
+            await interaction.followup.send(f"Cannot soft-ban {user.mention}.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
@@ -145,9 +125,9 @@ class ContextDelete(commands.Cog):
         try:
             await user.send(embed=embed2)
         except Exception:
-            await interaction.followup.send(f"{user.display_name} has been soft-banned, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
+            await interaction.followup.send(f"{user.mention} has been soft-banned, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
             return
-        await interaction.followup.send(f"{user.display_name} has been soft-banned.", ephemeral=True)
+        await interaction.followup.send(f"{user.mention} has been soft-banned.", ephemeral=True)
     
     @app_commands.default_permissions(ban_members=True)
     async def contextkick(self, interaction: discord.Interaction, user: discord.User):
@@ -155,7 +135,7 @@ class ContextDelete(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** kicked **{user.display_name}**"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** kicked **{user.mention}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
@@ -164,7 +144,7 @@ class ContextDelete(commands.Cog):
         try:
             await interaction.guild.kick(user, reason=reason)
         except Exception:
-            await interaction.followup.send(f"Cannot kick {user.display_name}.", ephemeral=True)
+            await interaction.followup.send(f"Cannot kick {user.mention}.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
@@ -173,9 +153,9 @@ class ContextDelete(commands.Cog):
         try:
             await user.send(embed=embed2)
         except Exception:
-            await interaction.followup.send(f"{user.display_name} has been kicked, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
+            await interaction.followup.send(f"{user.mention} has been kicked, but has DMs disabled so i couldn't inform them about being banned.", ephemeral=True)
             return
-        await interaction.followup.send(f"{user.display_name} has been kicked.", ephemeral=True)
+        await interaction.followup.send(f"{user.mention} has been kicked.", ephemeral=True)
     
     @app_commands.default_permissions(ban_members=True)
     async def contextwarn(self, interaction: discord.Interaction, user: discord.User):
@@ -183,7 +163,7 @@ class ContextDelete(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** privately warned **{user.display_name}**"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
                                                           f"\n**User id**: {user.id}\n**Reason:** {reason}")
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned for {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
@@ -195,17 +175,17 @@ class ContextDelete(commands.Cog):
             await user.send(embed=embed2)
         except Exception:
             #PUBLIC WARN
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** publicly warned **{user.display_name}**"
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** publicly warned **{user.mention}**"
                                                               f"\n**User id**: {user.id}\n**Reason:** {reason}")
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
             await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
-            await interaction.followup.send(f"{user.display_name} has publicly been warned.", ephemeral=True)
+            await interaction.followup.send(f"{user.mention} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
-        await interaction.followup.send(f"{user.display_name} has been privately warned.", ephemeral=True)
+        await interaction.followup.send(f"{user.mention} has been privately warned.", ephemeral=True)
     
     @app_commands.default_permissions(ban_members=True)
     async def contextproxy(self, interaction: discord.Interaction, message: discord.Message):
@@ -218,7 +198,7 @@ class ContextDelete(commands.Cog):
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
         message_data = await message.reply(proxy_reply)
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** sent a proxy message to {message.channel.mention}"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** sent a proxy message to {message.channel.mention}"
                                                           f"\n**Message link:**{message_data.jump_url}"
                                                           f"\n**Message content:**\n{proxy_reply}")
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
@@ -232,7 +212,6 @@ class ContextDelete(commands.Cog):
         await context_modal.wait()
         duration = context_modal.duration.value
         reason = context_modal.reason.value
-        print(duration)
         if duration[-1] not in ["m","h","d"]:
             await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"
                                             f"e.g. 60m", ephemeral=True)
@@ -244,7 +223,7 @@ class ContextDelete(commands.Cog):
                 duration_dt = datetime.timedelta(minutes=int(duration.replace("h", "")))
             else:
                 duration_dt = datetime.timedelta(days=int(duration.replace("d", "")))
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.display_name}** muted **{user.display_name}**"
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
                                                               f"\n**Duration:** {duration}"
                                                               f"\n**User id**: {user.id}\n**Reason:** {reason}")
         except Exception:
@@ -258,7 +237,7 @@ class ContextDelete(commands.Cog):
         try:
             await user.timeout(duration_dt, reason=reason)
         except Exception:
-            await interaction.followup.send(f"Cannot mute {user.display_name}.", ephemeral=True)
+            await interaction.followup.send(f"Cannot mute {user.mention}.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
@@ -268,7 +247,7 @@ class ContextDelete(commands.Cog):
             await user.send(embed=embed2)
         except Exception:
             pass
-        await interaction.followup.send(f"{user.display_name} has been muted for {duration}.", ephemeral=True)
+        await interaction.followup.send(f"{user.mention} has been muted for {duration}.", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):
