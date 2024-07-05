@@ -59,7 +59,11 @@ class ContextDelete(commands.Cog):
     @app_commands.default_permissions(ban_members=True)
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
         await message.delete()
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{message.author.mention}**"
+        if message.author.display_name.endswith("[Game Chat]"):
+            embed_name = message.author.display_name
+        else:
+            embed_name = message.author.mention
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
                                                           f"\n**User id**: {message.author.id}"
                                                           f"\n**Channel**: {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
