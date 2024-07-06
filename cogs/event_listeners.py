@@ -28,12 +28,12 @@ class Listener(commands.Cog):
                     date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=20)
                     spam_count = 0
                     msg: discord.Message
-                    for i, msg in enumerate(self.messages[message.author.id][:]):
+                    for msg in self.messages[message.author.id][:]:
                         if msg.created_at > date_spam:
                             channels.add(msg.channel.name)
                             spam_count += 1
                         else:
-                            self.messages[message.author.id].pop(i)
+                            self.messages[message.author.id].remove(msg)
                             continue
                     if spam_count >= self.spam_threshold and len(channels) >= self.spam_threshold:
                         await message.author.timeout(timedelta(days=1), reason="Likely spam bot")
