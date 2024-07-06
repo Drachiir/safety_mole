@@ -237,8 +237,10 @@ class Moderation(commands.Cog):
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(channel="Select a channel for your message", message="Write message")
-    async def proxy(self, interaction: discord.Interaction, channel: discord.TextChannel, message: str):
+    async def proxy(self, interaction: discord.Interaction, message: str, channel: discord.TextChannel = None):
         await interaction.response.defer(thinking=True, ephemeral=True)
+        if not channel:
+            channel = interaction.channel
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)

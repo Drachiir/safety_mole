@@ -1,18 +1,36 @@
 import asyncio
+from datetime import datetime, timedelta, timezone
 import json
 import discord
 from discord import app_commands
-from discord.ext import commands
+from discord.ext import commands, tasks
 
 class Listener(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.messages = dict()
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
         if message.author.id == self.bot.user.id:
             return
         if message.guild:
+            # if message.author.id not in self.messages:
+            #     self.messages[message.author.id] = [message]
+            # else:
+            #     self.messages[message.author.id].append(message)
+            #     if len(self.messages[message.author.id]) > 1:
+            #         date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=10)
+            #         spam_count = 0
+            #         msg: discord.Message
+            #         for i, msg in enumerate(self.messages[message.author.id][:]):
+            #             if msg.created_at > date_spam:
+            #                 spam_count += 1
+            #                 await message.channel.send("spam")
+            #             else:
+            #                 self.messages[message.author.id].pop(i)
+            #                 continue
+            #             print(self.messages[message.author.id])
             return
         else:
             await message.channel.send("This Bot does not accept messages. For ban appeals please visit https://legiontd2.com/bans")
