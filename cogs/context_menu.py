@@ -3,6 +3,8 @@ import json
 import datetime
 import typing
 from datetime import timedelta
+
+import aiohttp
 import discord
 from discord import app_commands, ui, Interaction
 from discord._types import ClientT
@@ -31,6 +33,7 @@ class ContextMuteInput(ui.Modal):
 class ContextDelete(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
+        self.session = aiohttp.ClientSession(headers={'x-api-key': secret_file.get('apikey')})
         self.ctx_delete = app_commands.ContextMenu(name='Delete Message',callback=self.delete)
         self.ctx_ban = app_commands.ContextMenu(name='Ban User',callback=self.contextban)
         self.ctx_soft = app_commands.ContextMenu(name='Soft Ban User',callback=self.contextsoftban)
@@ -58,22 +61,34 @@ class ContextDelete(commands.Cog):
     
     @app_commands.default_permissions(ban_members=True)
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
-        await message.delete()
-        if message.author.display_name.endswith("[Game Chat]"):
-            embed_name = message.author.display_name
-        else:
-            embed_name = message.author.mention
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
-                                                          f"\n**User id**: {message.author.id}"
-                                                          f"\n**Channel**: {message.channel.name}"
-                                                          f"\n**Message content:**\n{message.content}")
+        await interaction.response.defer(thinking=True, ephemeral=True)
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        await interaction.followup.send("Message deleted", ephemeral=True)
+        await message.delete()
+        if message.author.display_name.endswith("[Game Chat]"):
+            embed_name = message.author.display_name
+            #pull playfab id from api
+            request_type = 'players/byName/'
+            playername = message.author.display_name.replace(" [Game Chat]", "")
+            url = 'https://apiv2.legiontd2.com/' + request_type + playername
+            async with self.session.get(url) as response:
+                if response.status != 200:
+                    user_id = f"**PlayFab id:** Api request error"
+                else:
+                    player_profile = json.loads(await response.text())
+                    user_id = f"**PlayFab id:** {player_profile["_id"]}"
+        else:
+            embed_name = message.author.mention
+            user_id = f"**User id:** {message.author.id}"
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
+                                                          f"\n{user_id}"
+                                                          f"\n**Channel:** {message.channel.name}"
+                                                          f"\n**Message content:**\n{message.content}")
         await modlogs.send(embed=embed)
-        await interaction.response.send_message("Message deleted", ephemeral=True)
     
     @app_commands.default_permissions(ban_members=True)
     async def contextban(self, interaction: discord.Interaction, user: discord.User):
@@ -82,7 +97,7 @@ class ContextDelete(commands.Cog):
         await context_modal.wait()
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}**"
-                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -110,7 +125,7 @@ class ContextDelete(commands.Cog):
         await context_modal.wait()
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** soft-banned **{user.mention}**"
-                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -140,7 +155,7 @@ class ContextDelete(commands.Cog):
         await context_modal.wait()
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** kicked **{user.mention}**"
-                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -168,7 +183,7 @@ class ContextDelete(commands.Cog):
         await context_modal.wait()
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
-                                                          f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned for {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         channel_ids = modcog.get_channels(interaction.guild.id)
@@ -180,7 +195,7 @@ class ContextDelete(commands.Cog):
         except Exception:
             #PUBLIC WARN
             embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** publicly warned **{user.mention}**"
-                                                              f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
@@ -229,7 +244,7 @@ class ContextDelete(commands.Cog):
                 duration_dt = datetime.timedelta(days=int(duration.replace("d", "")))
             embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
                                                               f"\n**Duration:** {duration}"
-                                                              f"\n**User id**: {user.id}\n**Reason:** {reason}")
+                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
         except Exception:
             await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"
                                             f"e.g. 1d", ephemeral=True)
