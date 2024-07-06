@@ -39,7 +39,11 @@ class Listener(commands.Cog):
                             self.messages[message.author.id].remove(msg)
                             continue
                     if spam_count >= self.spam_threshold and len(channels) >= self.spam_threshold:
-                        await message.author.timeout(timedelta(days=1), reason="Likely spam bot")
+                        try:
+                            await message.author.timeout(timedelta(days=1), reason="Likely spam bot")
+                        except Exception:
+                            del self.messages[message.author.id]
+                            return
                         output_string = (f"{self.bot.user.mention} detected a likely spam bot:"
                                          f"\n{message.author.mention} (Muted for 1 day)"
                                          f"\n**Deleted messages:**")
