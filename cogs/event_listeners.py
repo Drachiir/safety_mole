@@ -18,6 +18,8 @@ class Listener(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.author.id == self.bot.user.id:
             return
+        if message.channel.id in [317696057184092171, 331187137758232577, 600398244958437396, 458360424489025539, 752673556017578124]:
+            return
         if message.guild:
             if message.author.id not in self.messages:
                 self.messages[message.author.id] = [message]
