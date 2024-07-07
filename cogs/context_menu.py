@@ -59,6 +59,7 @@ class ContextMenu(commands.Cog):
         self.bot.tree.remove_command(self.ctx_proxy.name, type=self.ctx_proxy.type)
         self.bot.tree.remove_command(self.ctx_mute.name, type=self.ctx_mute.type)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def delete(self, interaction: discord.Interaction, message: discord.Message):
         await interaction.response.defer(thinking=True, ephemeral=True)
@@ -90,6 +91,7 @@ class ContextMenu(commands.Cog):
                                                           f"\n**Message content:**\n{message.content}")
         await modlogs.send(embed=embed)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextban(self, interaction: discord.Interaction, user: discord.User):
         context_modal = ContextInput(title="Enter Reason for Ban")
@@ -118,6 +120,7 @@ class ContextMenu(commands.Cog):
             return
         await interaction.followup.send(f"{user.mention} has been banned.", ephemeral=True)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextsoftban(self, interaction: discord.Interaction, user: discord.User):
         context_modal = ContextInput(title="Enter Reason for Soft-Ban")
@@ -148,6 +151,7 @@ class ContextMenu(commands.Cog):
             return
         await interaction.followup.send(f"{user.mention} has been soft-banned.", ephemeral=True)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextkick(self, interaction: discord.Interaction, user: discord.User):
         context_modal = ContextInput(title="Enter Reason for Kick")
@@ -176,6 +180,7 @@ class ContextMenu(commands.Cog):
             return
         await interaction.followup.send(f"{user.mention} has been kicked.", ephemeral=True)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextwarn(self, interaction: discord.Interaction, user: discord.User):
         context_modal = ContextInput(title="Enter Reason for Warning")
@@ -206,6 +211,7 @@ class ContextMenu(commands.Cog):
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"{user.mention} has been privately warned.", ephemeral=True)
     
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextproxy(self, interaction: discord.Interaction, message: discord.Message):
         context_modal = ContextInput(title="Enter Message for Proxy Reply")
@@ -223,7 +229,8 @@ class ContextMenu(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"Message has been sent.", ephemeral=True)
-
+    
+    @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     async def contextmute(self, interaction: discord.Interaction, user: discord.Member):
         context_modal = ContextMuteInput(title="Enter duration e.g 60m")
