@@ -80,6 +80,30 @@ class Tags(commands.Cog):
             await ctx.send(embed=embed)
             return
         await ctx.send(tag_content)
+    
+    @commands.guild_only()
+    @commands.has_permissions(ban_members=True)
+    @commands.command()
+    async def tag_delete(self, ctx: commands.Context):
+        path = str(pathlib.Path(__file__).parent.parent.resolve()) + f"/Files/Tags/{ctx.guild.id}"
+        if not Path(Path(str(path))).is_dir():
+            await ctx.send("No tags found for this server.")
+        tag_list = os.listdir(path)
+        command_input = ctx.message.content[5:].lower()
+        try:
+            os.remove(path + f"/{command_input}.txt")
+        except Exception:
+            close_matches = difflib.get_close_matches(f"{command_input}.txt", tag_list, cutoff=0.6, n=5)
+            if len(close_matches) == 0:
+                await ctx.send(f"Tag '{command_input}' not found.")
+                return
+            output_string = f"**Tag '{command_input}' not found.\nDo you mean:**\n"
+            for match in close_matches:
+                output_string += f"`?tag {match.replace(".txt", "")}`\n"
+            embed = discord.Embed(color=0xDE1919, description=output_string)
+            await ctx.send(embed=embed)
+            return
+        await ctx.send(f"Tag '{command_input}' deleted.")
         
         
 async def setup(bot:commands.Bot):
