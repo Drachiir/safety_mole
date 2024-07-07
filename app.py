@@ -14,7 +14,7 @@ with open('Files/json/Secrets.json') as f:
 class Legion(commands.Bot):
     def __init__(self):
         intents = discord.Intents.all()
-        super().__init__(command_prefix=".", intents=intents)
+        super().__init__(command_prefix="?", intents=intents)
         self.exts = []
         for e in os.listdir("cogs"):
             if "__pycache__" in e:

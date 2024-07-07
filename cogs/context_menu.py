@@ -30,7 +30,7 @@ class ContextMuteInput(ui.Modal):
         await interaction.response.defer()
 
 
-class ContextDelete(commands.Cog):
+class ContextMenu(commands.Cog):
     def __init__(self, bot: commands.Bot) -> None:
         self.bot = bot
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret_file.get('apikey')})
@@ -77,15 +77,15 @@ class ContextDelete(commands.Cog):
             url = 'https://apiv2.legiontd2.com/' + request_type + playername
             async with self.session.get(url) as response:
                 if response.status != 200:
-                    user_id = f"**PlayFab id:** Api request error"
+                    user_id = ""
                 else:
                     player_profile = json.loads(await response.text())
-                    user_id = f"**PlayFab id:** {player_profile["_id"]}"
+                    user_id = f"\n**Kraken:** https://kraken.legiontd2.com/playerid/{player_profile["_id"]}"
         else:
             embed_name = message.author.mention
-            user_id = f"**User id:** {message.author.id}"
+            user_id = f"\n**User id:** {message.author.id}"
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
-                                                          f"\n{user_id}"
+                                                          f"{user_id}"
                                                           f"\n**Channel:** {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
         await modlogs.send(embed=embed)
@@ -270,4 +270,4 @@ class ContextDelete(commands.Cog):
 
 
 async def setup(bot:commands.Bot):
-    await bot.add_cog(ContextDelete(bot))
+    await bot.add_cog(ContextMenu(bot))
