@@ -49,7 +49,7 @@ class Listener(commands.Cog):
                                          f"\n**Deleted messages:**")
                         for msg in self.messages[message.author.id]:
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
-                            output_string += f"\nMessage in {msg.channel.name} from {d_timestamp}\n{msg.content}"
+                            output_string += f"\nMessage in {msg.channel.name} | {d_timestamp}\n{msg.content}"
                             await msg.delete()
                         embed = discord.Embed(color=0xDE1919, description=output_string)
                         channel_ids = modcog.get_channels(message.guild.id)

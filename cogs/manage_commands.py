@@ -32,26 +32,11 @@ class ManageCommands(commands.Cog):
                     print("Reloaded: " + content)
             except Exception:
                 traceback.print_exc()
-        else:
-            await ctx.channel.send("No permission to use this command.")
-            return
-        await ctx.message.add_reaction("✅")
     
     @commands.command()
     async def sync(self, ctx: commands.Context):
         if ctx.author.name == "drachir_":
             print(await self.client.tree.sync(guild=None))
-        else:
-            await ctx.channel.send("No permission to use this command.")
-    
-    @commands.command()
-    async def kill(self, ctx: commands.Context):
-        if ctx.author.name == "drachir_":
-            await self.client.close()
-            loop = asyncio.get_running_loop()
-            loop.stop()
-        else:
-            await ctx.channel.send("No permission to use this command.")
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(ManageCommands(bot))
