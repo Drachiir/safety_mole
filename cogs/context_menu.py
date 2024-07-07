@@ -67,7 +67,6 @@ class ContextDelete(commands.Cog):
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
-        await interaction.followup.send("Message deleted", ephemeral=True)
         await message.delete()
         if message.author.display_name.endswith("[Game Chat]"):
             embed_name = message.author.display_name
