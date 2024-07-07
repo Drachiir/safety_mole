@@ -89,7 +89,7 @@ class Tags(commands.Cog):
         if not Path(Path(str(path))).is_dir():
             await ctx.send("No tags found for this server.")
         tag_list = os.listdir(path)
-        command_input = ctx.message.content[5:].lower()
+        command_input = ctx.message.content[12:].lower()
         try:
             os.remove(path + f"/{command_input}.txt")
         except Exception:
@@ -104,6 +104,10 @@ class Tags(commands.Cog):
             await ctx.send(embed=embed)
             return
         await ctx.send(f"Tag '{command_input}' deleted.")
+    
+    @tag_delete.error
+    async def on_tag_delete_error(self, ctx: commands.Context, error: commands.CommandError):
+        pass
         
         
 async def setup(bot:commands.Bot):
