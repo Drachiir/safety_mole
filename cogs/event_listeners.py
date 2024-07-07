@@ -29,16 +29,13 @@ class Listener(commands.Cog):
                     channels = set()
                     date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=20)
                     date_clean = datetime.now(tz=timezone.utc) - timedelta(hours=1)
-                    spam_count = 0
                     msg: discord.Message
                     for msg in self.messages[message.author.id][:]:
                         if msg.created_at > date_spam:
                             channels.add(msg.channel.name)
-                            spam_count += 1
                         elif msg.created_at < date_clean:
                             self.messages[message.author.id].remove(msg)
-                            continue
-                    if spam_count >= self.spam_threshold and len(channels) >= self.spam_threshold:
+                    if len(channels) >= self.spam_threshold:
                         try:
                             await message.author.timeout(timedelta(days=1), reason="Likely spam bot")
                         except Exception:
@@ -49,7 +46,7 @@ class Listener(commands.Cog):
                                          f"\n**Deleted messages:**")
                         for msg in self.messages[message.author.id]:
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
-                            output_string += f"\nMessage in {msg.channel.name} | {d_timestamp}\n{msg.content}"
+                            output_string += f"\n{msg.channel.name} | {d_timestamp}\n{msg.content}"
                             await msg.delete()
                         embed = discord.Embed(color=0xDE1919, description=output_string)
                         channel_ids = modcog.get_channels(message.guild.id)
