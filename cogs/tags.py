@@ -36,6 +36,7 @@ class Tags(commands.Cog):
         tree.on_error = self._old_tree_error
         self.bot.tree.remove_command(self.ctx_create_tag.name, type=self.ctx_create_tag.type)
     
+    @app_commands.guild_only()
     @app_commands.checks.has_any_role("Community Helper", "Moderator", "Developer")
     async def create_tag(self, interaction: discord.Interaction, message: discord.Message):
         context_modal = ContextInput(title="Enter the name for the Tag")
@@ -56,6 +57,7 @@ class Tags(commands.Cog):
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         await interaction.response.send_message("You don't have permission to use this.", ephemeral=True)
     
+    @commands.guild_only()
     @commands.command()
     async def tag(self, ctx: commands.Context):
         path = str(pathlib.Path(__file__).parent.parent.resolve()) + f"/Files/Tags/{ctx.guild.id}"
