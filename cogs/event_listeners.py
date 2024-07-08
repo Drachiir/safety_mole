@@ -42,8 +42,7 @@ class Listener(commands.Cog):
                             del self.messages[message.author.id]
                             return
                         output_string = (f"{self.bot.user.mention} detected a spam bot:"
-                                         f"\n{message.author.name} (Muted for 7 day)"
-                                         f"\n**User id:** {message.author.id}"
+                                         f"\n{message.author.mention} (Muted for 7 day)"
                                          f"\n**Deleted messages:**")
                         for msg in self.messages[message.author.id]:
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
