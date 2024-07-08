@@ -53,6 +53,14 @@ class Tags(commands.Cog):
         with open(path + f"/{tag_name}.txt", "w") as f:
             f.write(message.content)
         await interaction.followup.send(f"Tag under name {tag_name} created.", ephemeral=True)
+        channel_ids = modcog.get_channels(interaction.guild.id)
+        if not channel_ids:
+            return
+        else:
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** created tag '**{tag_name}**'"
+                                                              f"\n**Tag Source:** {message.jump_url}")
+            modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+            await modlogs.send(embed=embed)
     
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         await interaction.response.send_message("You don't have permission to use this.", ephemeral=True)
@@ -105,6 +113,13 @@ class Tags(commands.Cog):
             await ctx.send(embed=embed)
             return
         await ctx.send(f"Tag '{command_input}' deleted.")
+        channel_ids = modcog.get_channels(ctx.guild.id)
+        if not channel_ids:
+            return
+        else:
+            embed = discord.Embed(color=0xDE1919, description=f"**{ctx.author.mention}** deleted tag '**{command_input}**'")
+            modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+            await modlogs.send(embed=embed)
     
     @tag_delete.error
     async def on_tag_delete_error(self, ctx: commands.Context, error: commands.CommandError):
