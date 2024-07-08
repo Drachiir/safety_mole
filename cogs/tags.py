@@ -71,7 +71,11 @@ class Tags(commands.Cog):
         path = str(pathlib.Path(__file__).parent.parent.resolve()) + f"/Files/Tags/{ctx.guild.id}"
         if not Path(Path(str(path))).is_dir():
             await ctx.send("No tags found for this server.")
-        tag_list = os.listdir(path)
+        tag_list = []
+        tag_list_temp = os.listdir(path)
+        for tag in tag_list_temp:
+            if tag.endswith(".txt"):
+                tag_list.append(tag)
         command_input = ctx.message.content[5:].lower()
         try:
             with open(path + f"/{command_input}.txt", "r") as f:
