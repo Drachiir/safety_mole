@@ -37,22 +37,25 @@ class Listener(commands.Cog):
                             self.messages[message.author.id].remove(msg)
                     if len(channels) >= self.spam_threshold:
                         try:
-                            await message.author.timeout(timedelta(days=1), reason="Likely spam bot")
+                            await message.author.timeout(timedelta(days=7), reason="Likely spam bot")
                         except Exception:
                             del self.messages[message.author.id]
                             return
-                        output_string = (f"{self.bot.user.mention} detected a likely spam bot:"
-                                         f"\n{message.author.mention} (Muted for 1 day)"
+                        output_string = (f"{self.bot.user.mention} detected a spam bot:"
+                                         f"\n{message.author.name} (Muted for 7 day)"
+                                         f"\n**User id:** {message.author.id}"
                                          f"\n**Deleted messages:**")
                         for msg in self.messages[message.author.id]:
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
-                            output_string += f"\n{msg.channel.name} | {d_timestamp}\n{msg.content}"
+                            output_string += f"\n**Channel: {msg.channel.name}** | {d_timestamp}\n{msg.content}"
                             await msg.delete()
                         embed = discord.Embed(color=0xDE1919, description=output_string)
                         channel_ids = modcog.get_channels(message.guild.id)
                         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
                         await modlogs.send(embed=embed)
-                        embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for spam-bot like behavior.\nDuration: 1 Day")
+                        embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for spam-bot like behavior. Duration: 7 Days\n"
+                                                                     f"If your account was compromised, you may appeal your mute at https://legiontd2.com/bans")
+                        embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                         del self.messages[message.author.id]
                         try:
                             await message.author.send(embed=embed2)
