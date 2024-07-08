@@ -69,9 +69,10 @@ class Tags(commands.Cog):
             with open(path + f"/{command_input}.txt", "r") as f:
                 tag_content = f.read()
         except Exception:
-            close_matches = difflib.get_close_matches(f"{command_input}.txt", tag_list, cutoff=0.6, n=5)
+            close_matches = difflib.get_close_matches(f"{command_input}.txt", tag_list, cutoff=0.7, n=5)
             if len(close_matches) == 0:
-                await ctx.send(f"Tag '{command_input}' not found.")
+                embed3 = discord.Embed(color=0xDE1919, description=f"Tag '{command_input}' not found.")
+                await ctx.send(embed=embed3)
                 return
             output_string = f"**Tag '{command_input}' not found.\nDo you mean:**\n"
             for match in close_matches:
