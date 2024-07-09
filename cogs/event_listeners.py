@@ -68,7 +68,7 @@ class Listener(commands.Cog):
     @commands.Cog.listener()
     async def on_thread_create(self, thread:discord.Thread):
         while not thread.starter_message:
-            await asyncio.sleep(1)
+            await asyncio.sleep(0.5)
         await thread.starter_message.pin()
         if thread.parent.name == "bugs-and-troubleshooting":
             for tag in thread.applied_tags:
