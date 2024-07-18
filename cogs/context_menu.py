@@ -16,7 +16,7 @@ with open('Files/json/Secrets.json') as f:
     f.close()
 
 class ContextInput(ui.Modal):
-    answer = ui.TextInput(label='Reason', style=discord.TextStyle.short)
+    answer = ui.TextInput(label='Enter Text', style=discord.TextStyle.long)
     
     async def on_submit(self, interaction: Interaction[ClientT], /) -> None:
         await interaction.response.defer()
