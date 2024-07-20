@@ -69,6 +69,10 @@ class ContextMenu(commands.Cog):
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await interaction.followup.send("Message deleted", ephemeral=True)
+        files = []
+        if message.attachments:
+            for i, att in enumerate(message.attachments):
+                files.append(await att.to_file(filename=f"temp{i}.png"))
         await message.delete()
         if message.author.display_name.endswith("[Game Chat]"):
             embed_name = message.author.display_name
@@ -89,7 +93,15 @@ class ContextMenu(commands.Cog):
                                                           f"{user_id}"
                                                           f"\n**Channel:** {message.channel.name}"
                                                           f"\n**Message content:**\n{message.content}")
-        await modlogs.send(embed=embed)
+        if message.attachments:
+            if len(files) == 1:
+                embed.set_image(url="attachment://temp0.png")
+                await modlogs.send(embed=embed, file=files[0])
+            else:
+                await modlogs.send(embed=embed)
+                await modlogs.send(files=files)
+        else:
+            await modlogs.send(embed=embed)
     
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
