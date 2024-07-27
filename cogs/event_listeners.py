@@ -71,11 +71,6 @@ class Listener(commands.Cog):
             await asyncio.sleep(0.5)
         await thread.starter_message.pin()
         if thread.parent.name == "bugs-and-troubleshooting":
-            for tag in thread.applied_tags:
-                if "Bug report" == tag.name:
-                    break
-            else:
-                return
             message = thread.starter_message
             if not message.attachments:
                 await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}\n"
