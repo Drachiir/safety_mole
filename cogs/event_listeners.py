@@ -69,7 +69,8 @@ class Listener(commands.Cog):
     async def on_thread_create(self, thread:discord.Thread):
         while not thread.starter_message:
             await asyncio.sleep(0.5)
-        await thread.starter_message.pin()
+        if thread.parent.name in ["bugs-and-troubleshooting", "suggestions"]:
+            await thread.starter_message.pin()
         if thread.parent.name == "bugs-and-troubleshooting":
             message = thread.starter_message
             if not message.attachments:
