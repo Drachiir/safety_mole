@@ -258,7 +258,7 @@ class ContextMenu(commands.Cog):
             if duration.endswith("m"):
                 duration_dt = datetime.timedelta(minutes=int(duration.replace("m", "")))
             elif duration.endswith("h"):
-                duration_dt = datetime.timedelta(minutes=int(duration.replace("h", "")))
+                duration_dt = datetime.timedelta(hours=int(duration.replace("h", "")))
             else:
                 duration_dt = datetime.timedelta(days=int(duration.replace("d", "")))
             embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
