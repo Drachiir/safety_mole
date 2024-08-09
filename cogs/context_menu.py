@@ -92,8 +92,8 @@ class ContextMenu(commands.Cog):
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
                                                           f"{user_id}"
                                                           f"\n**Channel:** {message.channel.name}"
-                                                          f"\n**Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
-                                                          f"\n**Message content:**\n{message.content}")
+                                                          f"\n**Message Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
+                                                          f"\n**Message Content:**\n{message.content}")
         if message.attachments:
             if len(files) == 1:
                 embed.set_image(url="attachment://temp0.png")
