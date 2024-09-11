@@ -281,7 +281,7 @@ class Moderation(commands.Cog):
             if (keyword.casefold() in msg.author.name.casefold()) or (keyword.casefold() in msg.content.casefold()):
                 msg_list += (f"Author: {msg.author}, Date {msg.created_at.date()}, Channel: {msg.channel.name}\n"
                              f"Message: {msg.content}\n"
-                             f"{msg.jump_url}\n")
+                             f"{msg.jump_url}\n\n")
                 count += 1
         with open("results.txt", "w") as file:
             file.write(msg_list)
