@@ -277,7 +277,7 @@ class Moderation(commands.Cog):
         msg: discord.Message
         msg_list=""
         count = 0
-        async for msg in channel.history(limit=None):
+        async for msg in channel.history(limit=50000):
             if (keyword.casefold() in msg.author.name.casefold()) or (keyword.casefold() in msg.content.casefold()):
                 msg_list += (f"Author: {msg.author}, Date {msg.created_at.date()}\n"
                              f"{msg.content}\n"
