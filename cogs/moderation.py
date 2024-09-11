@@ -278,7 +278,7 @@ class Moderation(commands.Cog):
         msg_list=""
         count = 0
         count2 = 0
-        async for msg in channel.history(limit=50000):
+        async for msg in channel.history(limit=10000):
             count2 += 1
             print(count2)
             if (keyword.casefold() in msg.author.name.casefold()) or (keyword.casefold() in msg.content.casefold()):
