@@ -283,6 +283,7 @@ class Moderation(commands.Cog):
                              f"{msg.content}\n"
                              f"{msg.jump_url}\n")
                 count += 1
+                print(count)
         with open("results.txt", "w") as file:
             file.write(msg_list)
         await interaction.followup.send(f"Search done. {count} results found with keyword: '{keyword}'.", file=discord.File("results.txt", filename="results.txt"))
