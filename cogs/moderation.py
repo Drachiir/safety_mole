@@ -271,16 +271,15 @@ class Moderation(commands.Cog):
     @app_commands.command(name="chat-search", description="Search a chat for specific messages")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(channel="Select a channel for Public warnings", keyword="The keyword to search for.")
-    async def chat_search(self, interaction: discord.Interaction, channel: discord.TextChannel, keyword: str):
+    @app_commands.describe(channel="Select a channel for Public warnings", keyword="The keyword to search for.", limit="Search limit, recommended: 10000. Bigger number = longer query")
+    async def chat_search(self, interaction: discord.Interaction, channel: discord.TextChannel, keyword: str, limit: int):
         await interaction.response.defer(thinking=True)
         msg: discord.Message
         msg_list=""
         count = 0
         count2 = 0
-        async for msg in channel.history(limit=10000):
+        async for msg in channel.history(limit=limit):
             count2 += 1
-            print(count2)
             if (keyword.casefold() in msg.author.name.casefold()) or (keyword.casefold() in msg.content.casefold()):
                 msg_list += (f"Author: {msg.author}, Date {msg.created_at.date()}\n"
                              f"{msg.content}\n"
