@@ -268,5 +268,24 @@ class Moderation(commands.Cog):
             f.close()
         await interaction.followup.send(f"Setup done.", ephemeral=True)
     
+    @app_commands.command(name="chat-search", description="Search a chat for specific messages")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    @app_commands.describe(channel="Select a channel for Public warnings", keyword="The keyword to search for.")
+    async def chat_search(self, interaction: discord.Interaction, channel: discord.TextChannel, keyword: str):
+        await interaction.response.defer(thinking=True)
+        msg: discord.Message
+        msg_list=""
+        count = 0
+        async for msg in channel.history(limit=None):
+            if (keyword.casefold() in msg.author.name.casefold()) or (keyword.casefold() in msg.content.casefold()):
+                msg_list += (f"Author: {msg.author}, Date {msg.created_at.date()}\n"
+                             f"{msg.content}\n"
+                             f"{msg.jump_url}\n")
+                count += 1
+        with open("results.txt", "w") as file:
+            file.write(msg_list)
+        await interaction.followup.send(f"Search done. {count} results found with keyword: '{keyword}'.", file=discord.File("results.txt", filename="results.txt"))
+    
 async def setup(bot:commands.Bot):
     await bot.add_cog(Moderation(bot))
