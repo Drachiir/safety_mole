@@ -12,7 +12,7 @@ class Listener(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.messages = dict()
-        self.spam_threshold = 5
+        self.spam_threshold = 6
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
