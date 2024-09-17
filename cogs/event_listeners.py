@@ -27,7 +27,7 @@ class Listener(commands.Cog):
                 self.messages[message.author.id].append(message)
                 if len(self.messages[message.author.id]) >= self.spam_threshold:
                     channels = set()
-                    date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=20)
+                    date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=60)
                     date_clean = datetime.now(tz=timezone.utc) - timedelta(hours=1)
                     msg: discord.Message
                     for msg in self.messages[message.author.id][:]:
