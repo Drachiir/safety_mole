@@ -12,7 +12,7 @@ class Listener(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.messages = dict()
-        self.spam_threshold = 6
+        self.spam_threshold = 5
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -27,7 +27,7 @@ class Listener(commands.Cog):
                 self.messages[message.author.id].append(message)
                 if len(self.messages[message.author.id]) >= self.spam_threshold:
                     channels = set()
-                    date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=60)
+                    date_spam = datetime.now(tz=timezone.utc) - timedelta(seconds=50)
                     date_clean = datetime.now(tz=timezone.utc) - timedelta(hours=1)
                     msg: discord.Message
                     for msg in self.messages[message.author.id][:]:
