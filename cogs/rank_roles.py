@@ -1,4 +1,6 @@
 import pathlib
+from time import sleep
+
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -97,6 +99,7 @@ class GameAuthCog(commands.Cog):
                 )
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
+                await asyncio.sleep(1)
                 await message.delete()
                 success = await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
                 if not success:
