@@ -70,7 +70,7 @@ class GameAuthCog(commands.Cog):
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
-        code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + "(Do not copy/paste this unless you know why)"
+        code = "/" + (''.join(random.choices(string.ascii_uppercase + string.digits, k=6))) + "(Do not copy/paste this unless you know why)"
         self.auth_requests[interaction.user.id] = {
             "code": code,
             "expires": datetime.now(tz=timezone.utc) + timedelta(minutes=10),
@@ -79,10 +79,9 @@ class GameAuthCog(commands.Cog):
         }
         
         await interaction.followup.send(
-            f"Open Legion TD 2 and post this code in the global chat, within the next 10 minutes to authenticate:\n```{code}```",
+            f"Open Legion TD 2 and send this message in the global chat within the next 10 minutes:\n```{code}```",
             ephemeral=True
         )
-        self.check_auth_requests.start()
     
     @commands.Cog.listener()
     async def on_message(self, message):
@@ -99,7 +98,7 @@ class GameAuthCog(commands.Cog):
                 )
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
-                await asyncio.sleep(5)
+                await asyncio.sleep(1)
                 await message.delete()
                 success = await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
                 if not success:
