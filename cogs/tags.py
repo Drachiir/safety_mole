@@ -63,7 +63,10 @@ class Tags(commands.Cog):
             await modlogs.send(embed=embed)
     
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
-        await interaction.response.send_message("You don't have permission to use this.", ephemeral=True)
+        try:
+            await interaction.response.send_message("You don't have permission to use this.", ephemeral=True)
+        except Exception:
+            pass
     
     @commands.guild_only()
     @commands.command()

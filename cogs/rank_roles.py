@@ -77,7 +77,7 @@ class GameAuthCog(commands.Cog):
         }
         
         await interaction.followup.send(
-            f"Open Legion TD 2 and post this code in the global chat, within the next 10 minutes to authenticate:\n`{code}`",
+            f"Open Legion TD 2 and post this code in the global chat, within the next 10 minutes to authenticate:\n```{code}```",
             ephemeral=True
         )
         self.check_auth_requests.start()
@@ -86,7 +86,7 @@ class GameAuthCog(commands.Cog):
     async def on_message(self, message):
         if message.channel.id != self.global_chat_id:
             return
-        if not message.author.display_name.endswith("[Game Chat]"):
+        if not message.webhook_id or not message.author.display_name.endswith("[Game Chat]"):
             return
         now = datetime.now(tz=timezone.utc)
         expired_users = []
@@ -157,7 +157,7 @@ class GameAuthCog(commands.Cog):
     
     @app_commands.command(name="update-rank", description="Update your rank badge.")
     async def update_rank(self, interaction: discord.Interaction):
-        await interaction.response.defer()
+        await interaction.response.defer(ephemeral=True)
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT player_id FROM users WHERE discord_id = ?", (str(interaction.user.id),)) as cursor:
                 result = await cursor.fetchone()
@@ -172,7 +172,7 @@ class GameAuthCog(commands.Cog):
             rank = get_rank_name(stats["overallElo"])
         except KeyError:
             await interaction.followup.send(f"Something went wrong :/", ephemeral=True)
-        
+            return
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("UPDATE users SET rank = ? WHERE discord_id = ?", (rank, str(interaction.user.id)))
             await db.commit()
