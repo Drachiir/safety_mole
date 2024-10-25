@@ -3,6 +3,7 @@ import discord
 from discord import app_commands
 from discord.ext import commands, tasks
 import aiosqlite
+import aiohttp
 import random
 import string
 from datetime import datetime, timedelta, timezone
@@ -12,19 +13,42 @@ import json
 with open(str(pathlib.Path(__file__).parent.parent.resolve()) + "/Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
 
+with open(str(pathlib.Path(__file__).parent.parent.resolve()) + "/Files/json/Secrets.json", "r") as secret_file:
+    secret = json.load(secret_file)
+
 GUILD_ID = config["GUILD_ID"]
 GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
 RANK_ROLES = {rank: int(role_id) for rank, role_id in config["RANK_ROLES"].items()}
 DB_PATH = str(pathlib.Path(__file__).parent.parent.resolve()) + config["DB_PATH"]
 
+def get_rank_name(elo):
+    ranks = {
+        2800: 'Legend',
+        2600: 'Grandmaster',
+        2400: 'SeniorMaster',
+        2200: 'Master',
+        2000: 'Expert',
+        1800: 'Diamond',
+        1600: 'Platinum',
+        1400: 'Gold',
+        1200: 'Silver',
+        1000: 'Bronze',
+    }
+    for threshold, rank in ranks.items():
+        if elo >= threshold:
+            return rank
+    return 'Unranked'
+
 
 class GameAuthCog(commands.Cog):
-    def __init__(self, bot):
+    def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db_path = DB_PATH
+        self.guild_id = GUILD_ID
         self.global_chat_id = GLOBAL_CHAT_CHANNEL_ID
         self.rank_roles = RANK_ROLES
         self.auth_requests = {}
+        self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
     
     async def create_db(self):
@@ -32,15 +56,18 @@ class GameAuthCog(commands.Cog):
             await db.execute("""
                 CREATE TABLE IF NOT EXISTS users (
                     discord_id TEXT PRIMARY KEY,
-                    player_id TEXT,
+                    player_id TEXT UNIQUE,
                     rank TEXT
                 )
             """)
             await db.commit()
     
-    @app_commands.command(name="rank_role", description="Start authentication process to get a rank badge.")
+    async def cog_unload(self):
+        await self.session.close()
+    
+    @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     async def rank_role(self, interaction: discord.Interaction):
-        await interaction.defer()
+        await interaction.response.defer(ephemeral=True, thinking=True)
         code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=6)) + "(Do not copy/paste this unless you know why)"
         self.auth_requests[interaction.user.id] = {
             "code": code,
@@ -50,62 +77,87 @@ class GameAuthCog(commands.Cog):
         }
         
         await interaction.followup.send(
-            f"Please post this code in the global chat *IN-GAME* within the next 10 minutes to authenticate:\n`{code}`",
+            f"Open Legion TD 2 and post this code in the global chat, within the next 10 minutes to authenticate:\n`{code}`",
             ephemeral=True
         )
         self.check_auth_requests.start()
     
-    @tasks.loop(seconds=5)
-    async def check_auth_requests(self):
+    @commands.Cog.listener()
+    async def on_message(self, message):
+        if message.channel.id != self.global_chat_id:
+            return
+        if not message.author.display_name.endswith("[Game Chat]"):
+            return
         now = datetime.now(tz=timezone.utc)
+        expired_users = []
         for user_id, auth_data in list(self.auth_requests.items()):
             if now > auth_data["expires"]:
                 await auth_data["user"].send(
                     f"<@{user_id}>, authentication timed out. Please try again using /rank."
                 )
-                del self.auth_requests[user_id]
-        
-        channel = self.bot.get_channel(self.global_chat_id)
-        async for message in channel.history(limit=50):
-            if not message.webhook_id or not message.author.name.endswith("[Game Chat]"):
-                continue
-            
-            user_id, code, found = None, None, False
-            for user_id, auth_data in self.auth_requests.items():
-                if auth_data["code"] in message.content:
-                    code = auth_data["code"]
-                    found = True
-                    break
-            if found:
-                await self.process_authentication(message.author, user_id, code)
+                expired_users.append(user_id)
+            elif auth_data["code"] in message.content:
                 await message.delete()
+                success = await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
+                if not success:
+                    await auth_data["user"].send(
+                        f"<@{user_id}>, authentication failed. Please try again later."
+                    )
                 break
+        for user_id in expired_users:
+            del self.auth_requests[user_id]
     
-    async def process_authentication(self, game_user, discord_user_id, code):
-        player_id = "12345"  # Placeholder, replace with actual API call
-        rank = "Legend"  # Placeholder, replace with actual API call
-        
-        async with aiosqlite.connect(self.db_path) as db:
-            await db.execute("""
-                INSERT OR REPLACE INTO users (discord_id, player_id, rank)
-                VALUES (?, ?, ?)
-            """, (discord_user_id, player_id, rank))
-            await db.commit()
-        
+    async def get_player_api_stats(self, playername, by_id = False):
+        if by_id:
+            player_id = playername
+        else:
+            request_type = 'players/byName/'
+            url = 'https://apiv2.legiontd2.com/' + request_type + playername
+            async with self.session.get(url) as response:
+                if response.status != 200:
+                    return 0, 0
+                playerprofile = json.loads(await response.text())
+            player_id = playerprofile["_id"]
+        request_type = 'players/stats/'
+        url = 'https://apiv2.legiontd2.com/' + request_type + player_id
+        async with self.session.get(url) as response:
+            if response.status != 200:
+                return 0, 0
+            return json.loads(await response.text()), player_id
+    
+    async def process_authentication(self, playername, discord_user_id, code):
+        del self.auth_requests[discord_user_id]
+        stats, player_id = await self.get_player_api_stats(playername)
+        if not stats:
+            return False
+        try:
+            rank = get_rank_name(stats["overallElo"])
+        except KeyError:
+            return False
         discord_user = await self.bot.fetch_user(discord_user_id)
         guild = self.bot.get_guild(GUILD_ID)
         member = guild.get_member(discord_user_id)
         rank_role_id = self.rank_roles.get(rank)
-        if rank_role_id:
-            rank_role = guild.get_role(rank_role_id)
-            await member.add_roles(rank_role)
-            await discord_user.send(f"Authentication successful! You have been assigned the rank: {rank}")
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                await db.execute("""
+                    INSERT OR REPLACE INTO users (discord_id, player_id, rank)
+                    VALUES (?, ?, ?)
+                """, (discord_user_id, player_id, rank))
+                await db.commit()
+            
+            if rank_role_id:
+                rank_role = guild.get_role(rank_role_id)
+                await member.add_roles(rank_role)
+                await discord_user.send(f"Authentication successful! You have been assigned the rank: {rank}")
+        except aiosqlite.IntegrityError:
+            await discord_user.send("This game account is already linked to another Discord account.")
+        return True
         
-        del self.auth_requests[discord_user_id]
     
     @app_commands.command(name="update-rank", description="Update your rank badge.")
     async def update_rank(self, interaction: discord.Interaction):
-        await interaction.defer()
+        await interaction.response.defer()
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("SELECT player_id FROM users WHERE discord_id = ?", (str(interaction.user.id),)) as cursor:
                 result = await cursor.fetchone()
@@ -115,15 +167,18 @@ class GameAuthCog(commands.Cog):
             return
         
         player_id = result[0]
-    
-        rank = "Legend"
+        stats, player_id = await self.get_player_api_stats(player_id, by_id=True)
+        try:
+            rank = get_rank_name(stats["overallElo"])
+        except KeyError:
+            await interaction.followup.send(f"Something went wrong :/", ephemeral=True)
         
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("UPDATE users SET rank = ? WHERE discord_id = ?", (rank, str(interaction.user.id)))
             await db.commit()
         
         guild = self.bot.get_guild(GUILD_ID)
-        member = guild.get_user(interaction.user.id)
+        member = guild.get_member(interaction.user.id)
         
         for role_name, role_id in self.rank_roles.items():
             role = guild.get_role(role_id)
