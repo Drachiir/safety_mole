@@ -2,6 +2,7 @@ import difflib
 import json
 import os.path
 import pathlib
+import traceback
 from pathlib import Path
 import discord
 from discord import app_commands, ui
@@ -64,7 +65,7 @@ class Tags(commands.Cog):
     
     async def on_app_command_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
         try:
-            await interaction.response.send_message("You don't have permission to use this.", ephemeral=True)
+            await interaction.response.send_message(f"Error. {error}", ephemeral=True)
         except Exception:
             pass
     

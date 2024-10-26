@@ -1,9 +1,10 @@
 import asyncio
 import json
 import datetime
+import traceback
 import typing
 from datetime import timedelta
-
+from datetime import datetime, timedelta, timezone
 import aiohttp
 import discord
 from discord import app_commands, ui, Interaction
@@ -257,15 +258,16 @@ class ContextMenu(commands.Cog):
             return
         try:
             if duration.endswith("m"):
-                duration_dt = datetime.timedelta(minutes=int(duration.replace("m", "")))
+                duration_dt = timedelta(minutes=int(duration.replace("m", "")))
             elif duration.endswith("h"):
-                duration_dt = datetime.timedelta(hours=int(duration.replace("h", "")))
+                duration_dt = timedelta(hours=int(duration.replace("h", "")))
             else:
-                duration_dt = datetime.timedelta(days=int(duration.replace("d", "")))
+                duration_dt = timedelta(days=int(duration.replace("d", "")))
             embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
                                                               f"\n**Duration:** {duration}"
                                                               f"\n**User id:** {user.id}\n**Reason:** {reason}")
         except Exception:
+            traceback.print_exc()
             await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"
                                             f"e.g. 1d", ephemeral=True)
             return
@@ -278,8 +280,30 @@ class ContextMenu(commands.Cog):
         except Exception:
             await interaction.followup.send(f"Cannot mute {user.mention}.", ephemeral=True)
             return
+        deleted_messages_log = []
+        if reason.lower() in ["spam", "scam"]:
+            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            
+            for channel in interaction.guild.text_channels:
+                try:
+                    async for message in channel.history(limit=100, after=one_hour_ago):
+                        if message.author == user:
+                            deleted_messages_log.append(f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.content}")
+                            await message.delete()
+                except discord.Forbidden:
+                    continue
+                except discord.HTTPException:
+                    pass
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
+        if deleted_messages_log:
+            deleted_messages_text = "\n".join(deleted_messages_log)
+            messages_embed = discord.Embed(
+                color=0xFF4500,
+                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                description=deleted_messages_text[:4096]
+            )
+            await modlogs.send(embed=messages_embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         try:

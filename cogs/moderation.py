@@ -2,10 +2,12 @@ import asyncio
 import datetime
 import json
 import pathlib
+import traceback
 import typing
 from pathlib import Path
 import discord
 from discord import app_commands
+from datetime import datetime, timedelta, timezone
 from discord.ext import commands
 
 with open('Files/json/Secrets.json') as f:
@@ -181,23 +183,46 @@ class Moderation(commands.Cog):
     async def mute(self, interaction: discord.Interaction, user: discord.Member, reason: str, duration: typing.Literal['60mins', '1days', '3days', '7days', '14days']):
         await interaction.response.defer(thinking=True, ephemeral=True)
         if duration.endswith("mins"):
-            duration_dt = datetime.timedelta(minutes=int(duration.replace("mins", "")))
+            duration_dt = timedelta(minutes=int(duration.replace("mins", "")))
         else:
-            duration_dt = datetime.timedelta(days=int(duration.replace("days", "")))
+            duration_dt = timedelta(days=int(duration.replace("days", "")))
+        
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
                                                           f"\n**Duration:** {duration}"
                                                           f"\n**User id:** {user.id}\n**Reason:** {reason}")
-        channel_ids = get_channels(interaction.guild.id)
-        if not channel_ids:
-            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
-            return
         try:
             await user.timeout(duration_dt, reason=reason)
         except Exception:
             await interaction.followup.send(f"Cannot mute {user.mention}.", ephemeral=True)
             return
+        deleted_messages_log = []
+        if reason.lower() in ["spam", "scam"]:
+            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            
+            for channel in interaction.guild.text_channels:
+                try:
+                    async for message in channel.history(limit=100, after=one_hour_ago):
+                        if message.author == user:
+                            deleted_messages_log.append(f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.content}")
+                            await message.delete()
+                except discord.Forbidden:
+                    continue
+                except discord.HTTPException:
+                    pass
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
+        if deleted_messages_log:
+            deleted_messages_text = "\n".join(deleted_messages_log)
+            messages_embed = discord.Embed(
+                color=0xFF4500,
+                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                description=deleted_messages_text[:4096]
+            )
+            await modlogs.send(embed=messages_embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         try:
@@ -219,8 +244,9 @@ class Moderation(commands.Cog):
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
             return
         try:
-            await user.timeout(datetime.timedelta(seconds=0), reason=reason)
+            await user.timeout(timedelta(seconds=0), reason=reason)
         except Exception:
+            traceback.print_exc()
             await interaction.followup.send(f"Cannot unmute {user.mention}.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
