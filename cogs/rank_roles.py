@@ -1,4 +1,5 @@
 import pathlib
+import traceback
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -92,7 +93,8 @@ class GameAuthCog(commands.Cog):
                 CREATE TABLE IF NOT EXISTS users (
                     discord_id TEXT PRIMARY KEY,
                     player_id TEXT UNIQUE,
-                    rank TEXT
+                    rank TEXT,
+                    ingame_name TEXT
                 )
             """)
             await db.commit()
@@ -141,6 +143,7 @@ class GameAuthCog(commands.Cog):
                 try:
                     await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
                 except Exception:
+                    traceback.print_exc()
                     embed = discord.Embed(color=0xDE1919, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
                     embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                     try:
@@ -201,11 +204,10 @@ class GameAuthCog(commands.Cog):
                         botmsgs = guild.get_channel(channel_ids["public_warn"])
                         await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
                     return False
-                
                 await db.execute("""
-                    INSERT OR REPLACE INTO users (discord_id, player_id, rank)
-                    VALUES (?, ?, ?)
-                """, (discord_user_id, player_id, rank))
+                    INSERT OR REPLACE INTO users (discord_id, player_id, rank, ingame_name)
+                    VALUES (?, ?, ?, ?)
+                """, (discord_user_id, player_id, rank, playername))
                 await db.commit()
             
             if rank_role_id:
@@ -271,6 +273,18 @@ class GameAuthCog(commands.Cog):
         new_rank_role = guild.get_role(self.rank_roles[rank])
         await member.add_roles(new_rank_role)
         await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
+    
+    @app_commands.command(name="remove-rank", description="Remove your rank badge.")
+    async def remove_rank(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        guild = self.bot.get_guild(GUILD_ID)
+        member = guild.get_member(interaction.user.id)
+        
+        for role_name, role_id in self.rank_roles.items():
+            role = guild.get_role(role_id)
+            if role in member.roles:
+                await member.remove_roles(role)
+        await interaction.followup.send(f"Your rank badge has been removed", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):
