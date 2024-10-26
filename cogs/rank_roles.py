@@ -27,6 +27,7 @@ GUILD_ID = config["GUILD_ID"]
 GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
 RANK_ROLES = {rank: int(role_id) for rank, role_id in config["RANK_ROLES"].items()}
 DB_PATH = str(pathlib.Path(__file__).parent.parent.resolve()) + config["DB_PATH"]
+DEBUG = config["DEBUG"]
 
 def get_rank_name(elo):
     ranks = {
@@ -89,33 +90,32 @@ class GameAuthCog(commands.Cog):
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
-        code = "/" + (''.join(random.choices(string.ascii_uppercase + string.digits, k=8))) #+ "(Do not copy/paste this unless you know why)"
+        code = f"/{(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #+ "(Do not copy/paste this unless you know why)"
         self.auth_requests[interaction.user.id] = {
             "code": code,
             "expires": datetime.now(tz=timezone.utc) + timedelta(minutes=10),
             "user": interaction.user,
             "channel": interaction.channel,
         }
-        
-        await interaction.followup.send(
-            f"Open Legion TD 2 and send this message in the global chat within the next 10 minutes:\n```{code}```",
-            ephemeral=True
-        )
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** **Open Legion TD 2** and,\nsend this message in the **Global Chat**:"
+                                                          f"\n```{code}```")
+        embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+        await interaction.followup.send(embed=embed, ephemeral=True)
     
     @commands.Cog.listener()
     async def on_message(self, message):
         if message.channel.id != self.global_chat_id:
             return
-        if not message.webhook_id or not message.author.display_name.endswith("[Game Chat]"):
+        if not (message.webhook_id or DEBUG) or not message.author.display_name.endswith("[Game Chat]"):
             return
         now = datetime.now(tz=timezone.utc)
         expired_users = []
         for user_id, auth_data in list(self.auth_requests.items()):
             if now > auth_data["expires"]:
+                embed = discord.Embed(color=0xDE1919, description=f"**{auth_data["user"].mention}** authentication timed out. Please try again using /rank.")
+                embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                 try:
-                    await auth_data["user"].send(
-                        f"<@{user_id}> authentication timed out. Please try again using /rank."
-                    )
+                    await auth_data["user"].send(embed=embed)
                 except Exception:
                     channel_ids = get_channels(self.guild_id)
                     guild = self.bot.get_guild(self.guild_id)
@@ -127,15 +127,15 @@ class GameAuthCog(commands.Cog):
                 await message.delete()
                 success = await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
                 if not success:
+                    embed = discord.Embed(color=0xDE1919, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
+                    embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                     try:
-                        await auth_data["user"].send(
-                            f"<@{user_id}> authentication failed. Please try again later."
-                        )
+                        await auth_data["user"].send(embed=embed)
                     except Exception:
                         channel_ids = get_channels(self.guild_id)
                         guild = self.bot.get_guild(self.guild_id)
                         botmsgs = guild.get_channel(channel_ids["public_warn"])
-                        await botmsgs.send(f"{auth_data["user"].mention} authentication failed. Please try again using /rank.")
+                        await botmsgs.send(f"{auth_data["user"].mention} authentication failed. Please try again later.")
                 break
         for user_id in expired_users:
             del self.auth_requests[user_id]
@@ -182,13 +182,19 @@ class GameAuthCog(commands.Cog):
             if rank_role_id:
                 rank_role = guild.get_role(rank_role_id)
                 await member.add_roles(rank_role)
+                embed = discord.Embed(color=0xDE1919, description=f"**{discord_user.mention} Authentication successful!**\n"
+                                                                  f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
+                                                                  f"\nYou can update your rank using **/update-rank** if it changes")
+                embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                 try:
-                    await discord_user.send(f"Authentication successful! You have been assigned the rank: {rank}{rank_emotes.get(rank)}")
+                    await discord_user.send(embed=embed)
                 except Exception:
                     channel_ids = get_channels(self.guild_id)
                     guild = self.bot.get_guild(self.guild_id)
                     botmsgs = guild.get_channel(channel_ids["public_warn"])
-                    await botmsgs.send(f"{discord_user.mention} Authentication successful! You have been assigned the rank: {rank}{rank_emotes.get(rank)}")
+                    await botmsgs.send(f"**{discord_user.mention} Authentication successful!**\n"
+                                                                  f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
+                                                                  f"\nYou can update your rank using **/update-rank** if it changes")
         except aiosqlite.IntegrityError:
             try:
                 await discord_user.send("This game account is already linked to another Discord account.")
