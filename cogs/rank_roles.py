@@ -48,18 +48,31 @@ def get_rank_name(elo):
     return 'Unranked'
 
 rank_emotes = {
-    "Unranked": "<:Unranked:1241064654717980723>",
-    "Bronze": "<:Bronze:1217999684484862057>",
-    "Silver": "<:Silver:1217999706555158631>",
-    "Gold": "<:Gold:1217999690369335407>",
-    "Platinum": "<:Platinum:1217999701337571379>",
-    "Diamond": "<:Diamond:1217999686888325150>",
-    "Expert": "<:Expert:1217999688494747718>",
-    "Master": "<:Master:1217999699114590248>",
-    "SeniorMaster": "<:SeniorMaster:1217999704349081701>",
-    "Grandmaster": "<:Grandmaster:1217999691883741224>",
-    "Legend": "<:Legend:1217999693234176050>"
+    "Unranked": "<:Unranked:1299633644746444830>",
+    "Bronze": "<:Bronze:1299633629802139709>",
+    "Silver": "<:Silver:1299633694662856705>",
+    "Gold": "<:Gold:1299633634596098078>",
+    "Platinum": "<:Platinum:1299633639788777544>",
+    "Diamond": "<:Diamond:1299633630695522327>",
+    "Expert": "<:Expert:1299633632650199091>",
+    "Master": "<:Master:1299633638534811659>",
+    "SeniorMaster": "<:SeniorMaster:1299633641051394109>",
+    "Grandmaster": "<:GrandMaster:1299633635431022657>",
+    "Legend": "<:Legend:1299633637049761792>"
 }
+# rank_emotes = {
+#     "Unranked": "<:Unranked:1241064654717980723>",
+#     "Bronze": "<:Bronze:1217999684484862057>",
+#     "Silver": "<:Silver:1217999706555158631>",
+#     "Gold": "<:Gold:1217999690369335407>",
+#     "Platinum": "<:Platinum:1217999701337571379>",
+#     "Diamond": "<:Diamond:1217999686888325150>",
+#     "Expert": "<:Expert:1217999688494747718>",
+#     "Master": "<:Master:1217999699114590248>",
+#     "SeniorMaster": "<:SeniorMaster:1217999704349081701>",
+#     "Grandmaster": "<:Grandmaster:1217999691883741224>",
+#     "Legend": "<:Legend:1217999693234176050>"
+# }
 
 
 class GameAuthCog(commands.Cog):
