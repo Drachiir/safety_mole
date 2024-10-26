@@ -1,6 +1,4 @@
 import pathlib
-from time import sleep
-
 import discord
 from discord import app_commands
 from discord.ext import commands, tasks
@@ -12,11 +10,18 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 import json
 
-with open(str(pathlib.Path(__file__).parent.parent.resolve()) + "/Files/json/rank_roles.json", "r") as config_file:
+with open("Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
 
-with open(str(pathlib.Path(__file__).parent.parent.resolve()) + "/Files/json/Secrets.json", "r") as secret_file:
+with open("Files/json/Secrets.json", "r") as secret_file:
     secret = json.load(secret_file)
+
+def get_channels(guild_id):
+    try:
+        with open(f"Files/Config/{guild_id}.json", "r") as f:
+            return json.load(f)
+    except Exception:
+        return None
 
 GUILD_ID = config["GUILD_ID"]
 GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
@@ -40,6 +45,20 @@ def get_rank_name(elo):
         if elo >= threshold:
             return rank
     return 'Unranked'
+
+rank_emotes = {
+    "Unranked": "<:Unranked:1241064654717980723>",
+    "Bronze": "<:Bronze:1217999684484862057>",
+    "Silver": "<:Silver:1217999706555158631>",
+    "Gold": "<:Gold:1217999690369335407>",
+    "Platinum": "<:Platinum:1217999701337571379>",
+    "Diamond": "<:Diamond:1217999686888325150>",
+    "Expert": "<:Expert:1217999688494747718>",
+    "Master": "<:Master:1217999699114590248>",
+    "SeniorMaster": "<:SeniorMaster:1217999704349081701>",
+    "Grandmaster": "<:Grandmaster:1217999691883741224>",
+    "Legend": "<:Legend:1217999693234176050>"
+}
 
 
 class GameAuthCog(commands.Cog):
@@ -70,7 +89,7 @@ class GameAuthCog(commands.Cog):
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
-        code = "/" + (''.join(random.choices(string.ascii_uppercase + string.digits, k=6))) + "(Do not copy/paste this unless you know why)"
+        code = "/" + (''.join(random.choices(string.ascii_uppercase + string.digits, k=8))) #+ "(Do not copy/paste this unless you know why)"
         self.auth_requests[interaction.user.id] = {
             "code": code,
             "expires": datetime.now(tz=timezone.utc) + timedelta(minutes=10),
@@ -93,18 +112,30 @@ class GameAuthCog(commands.Cog):
         expired_users = []
         for user_id, auth_data in list(self.auth_requests.items()):
             if now > auth_data["expires"]:
-                await auth_data["user"].send(
-                    f"<@{user_id}>, authentication timed out. Please try again using /rank."
-                )
+                try:
+                    await auth_data["user"].send(
+                        f"<@{user_id}> authentication timed out. Please try again using /rank."
+                    )
+                except Exception:
+                    channel_ids = get_channels(self.guild_id)
+                    guild = self.bot.get_guild(self.guild_id)
+                    botmsgs = guild.get_channel(channel_ids["public_warn"])
+                    await botmsgs.send(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
                 await asyncio.sleep(1)
                 await message.delete()
                 success = await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
                 if not success:
-                    await auth_data["user"].send(
-                        f"<@{user_id}>, authentication failed. Please try again later."
-                    )
+                    try:
+                        await auth_data["user"].send(
+                            f"<@{user_id}> authentication failed. Please try again later."
+                        )
+                    except Exception:
+                        channel_ids = get_channels(self.guild_id)
+                        guild = self.bot.get_guild(self.guild_id)
+                        botmsgs = guild.get_channel(channel_ids["public_warn"])
+                        await botmsgs.send(f"{auth_data["user"].mention} authentication failed. Please try again using /rank.")
                 break
         for user_id in expired_users:
             del self.auth_requests[user_id]
@@ -151,9 +182,21 @@ class GameAuthCog(commands.Cog):
             if rank_role_id:
                 rank_role = guild.get_role(rank_role_id)
                 await member.add_roles(rank_role)
-                await discord_user.send(f"Authentication successful! You have been assigned the rank: {rank}")
+                try:
+                    await discord_user.send(f"Authentication successful! You have been assigned the rank: {rank}{rank_emotes.get(rank)}")
+                except Exception:
+                    channel_ids = get_channels(self.guild_id)
+                    guild = self.bot.get_guild(self.guild_id)
+                    botmsgs = guild.get_channel(channel_ids["public_warn"])
+                    await botmsgs.send(f"{discord_user.mention} Authentication successful! You have been assigned the rank: {rank}{rank_emotes.get(rank)}")
         except aiosqlite.IntegrityError:
-            await discord_user.send("This game account is already linked to another Discord account.")
+            try:
+                await discord_user.send("This game account is already linked to another Discord account.")
+            except Exception:
+                channel_ids = get_channels(self.guild_id)
+                guild = self.bot.get_guild(self.guild_id)
+                botmsgs = guild.get_channel(channel_ids["public_warn"])
+                await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
         return True
         
     
@@ -189,7 +232,7 @@ class GameAuthCog(commands.Cog):
         
         new_rank_role = guild.get_role(self.rank_roles[rank])
         await member.add_roles(new_rank_role)
-        await interaction.followup.send(f"Your rank has been updated to: {rank}", ephemeral=True)
+        await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
 
 
 async def setup(bot:commands.Bot):
