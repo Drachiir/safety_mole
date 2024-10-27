@@ -277,6 +277,27 @@ class GameAuthCog(commands.Cog):
         await member.add_roles(new_rank_role)
         await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
     
+    @app_commands.command(name="show-profile", description="Show drachbot profile of a user, if they are verified.")
+    async def show_profile(self, interaction: discord.Interaction, user: discord.Member = None):
+        await interaction.response.defer(ephemeral=True)
+        if not user:
+            user_id = interaction.user.id
+            username = interaction.user.display_name
+        else:
+            user_id = user.id
+            username = user.display_name
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT player_id FROM users WHERE discord_id = ?", (str(user_id),)) as cursor:
+                result = await cursor.fetchone()
+        
+        if not result:
+            await interaction.followup.send("This user is not verified.", ephemeral=True)
+            return
+        
+        player_id = result[0]
+        await interaction.followup.send(f"{username} @ Drachbot <:Drachia:1300036826702024825>"
+                                        f"\nhttps://drachbot.site/profile/{player_id}", ephemeral=True)
+    
     @app_commands.command(name="remove-rank", description="Remove your rank badge and unlink your accounts.")
     async def remove_rank(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
