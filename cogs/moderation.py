@@ -182,61 +182,65 @@ class Moderation(commands.Cog):
     @app_commands.describe(user="Select a user to be muted", reason="Mute reason")
     async def mute(self, interaction: discord.Interaction, user: discord.Member, reason: str, duration: typing.Literal['60mins', '1days', '3days', '7days', '14days']):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        if duration.endswith("mins"):
-            duration_dt = timedelta(minutes=int(duration.replace("mins", "")))
-        else:
-            duration_dt = timedelta(days=int(duration.replace("days", "")))
-        
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
-                                                          f"\n**Duration:** {duration}"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
         try:
-            await user.timeout(duration_dt, reason=reason)
-        except Exception:
-            await interaction.followup.send(f"Cannot mute {user.mention}.", ephemeral=True)
-            return
-        deleted_messages_log = []
-        if reason.lower() in ["spam", "scam"]:
-            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            if duration.endswith("mins"):
+                duration_dt = timedelta(minutes=int(duration.replace("mins", "")))
+            else:
+                duration_dt = timedelta(days=int(duration.replace("days", "")))
             
-            for channel in interaction.guild.text_channels:
-                excluded_keywords = [
-                    "staff", "moderation", "info", "new players",
-                    "community helper", "tournament casters",
-                    "debug", "other", "archived", "voice"
-                ]
-                if any(keyword in channel.category.name.lower() for keyword in excluded_keywords):
-                    continue
-                try:
-                    async for message in channel.history(limit=100, after=one_hour_ago):
-                        if message.author == user:
-                            deleted_messages_log.append(f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.content}")
-                            await message.delete()
-                except discord.Forbidden:
-                    continue
-                except discord.HTTPException:
-                    pass
-        channel_ids = get_channels(interaction.guild.id)
-        if not channel_ids:
-            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
-            return
-        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
-        await modlogs.send(embed=embed)
-        if deleted_messages_log:
-            deleted_messages_text = "\n".join(deleted_messages_log)
-            messages_embed = discord.Embed(
-                color=0xFF4500,
-                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
-                description=deleted_messages_text[:4096]
-            )
-            await modlogs.send(embed=messages_embed)
-        embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
-        embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
-        try:
-            await user.send(embed=embed2)
+            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
+                                                              f"\n**Duration:** {duration}"
+                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
+            try:
+                await user.timeout(duration_dt, reason=reason)
+            except Exception:
+                await interaction.followup.send(f"Cannot mute {user.mention}.", ephemeral=True)
+                return
+            deleted_messages_log = []
+            if reason.lower() in ["spam", "scam"]:
+                one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+                
+                for channel in interaction.guild.text_channels:
+                    if channel.category:
+                        excluded_keywords = [
+                            "staff", "moderation", "info", "new players",
+                            "community helper", "tournament casters",
+                            "debug", "other", "archived", "voice"
+                        ]
+                        if any(keyword in channel.category.name.lower() for keyword in excluded_keywords):
+                            continue
+                    try:
+                        async for message in channel.history(limit=100, after=one_hour_ago):
+                            if message.author == user:
+                                deleted_messages_log.append(f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.content}")
+                                await message.delete()
+                    except discord.Forbidden:
+                        continue
+                    except discord.HTTPException:
+                        pass
+            channel_ids = get_channels(interaction.guild.id)
+            if not channel_ids:
+                await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+                return
+            modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+            await modlogs.send(embed=embed)
+            if deleted_messages_log:
+                deleted_messages_text = "\n".join(deleted_messages_log)
+                messages_embed = discord.Embed(
+                    color=0xFF4500,
+                    title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                    description=deleted_messages_text[:4096]
+                )
+                await modlogs.send(embed=messages_embed)
+            embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
+            embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+            try:
+                await user.send(embed=embed2)
+            except Exception:
+                pass
+            await interaction.followup.send(f"{user.mention} has been muted for {duration}.", ephemeral=True)
         except Exception:
-            pass
-        await interaction.followup.send(f"{user.mention} has been muted for {duration}.", ephemeral=True)
+            traceback.print_exc()
     
     @app_commands.command(name="unmute", description="Unmutes a user")
     @app_commands.guild_only()

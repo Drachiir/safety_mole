@@ -285,13 +285,14 @@ class ContextMenu(commands.Cog):
             one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
             
             for channel in interaction.guild.text_channels:
-                excluded_keywords = [
-                    "staff", "moderation", "info", "new players",
-                    "community helper", "tournament casters",
-                    "debug", "other", "archived", "voice"
-                ]
-                if any(keyword in channel.category.name.lower() for keyword in excluded_keywords):
-                    continue
+                if channel.category:
+                    excluded_keywords = [
+                        "staff", "moderation", "info", "new players",
+                        "community helper", "tournament casters",
+                        "debug", "other", "archived", "voice"
+                    ]
+                    if any(keyword in channel.category.name.lower() for keyword in excluded_keywords):
+                        continue
                 try:
                     async for message in channel.history(limit=100, after=one_hour_ago):
                         if message.author == user:
