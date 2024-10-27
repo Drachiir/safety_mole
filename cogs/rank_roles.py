@@ -10,6 +10,7 @@ import string
 from datetime import datetime, timedelta, timezone
 import asyncio
 import json
+import aiofiles
 
 with open("Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
@@ -17,10 +18,11 @@ with open("Files/json/rank_roles.json", "r") as config_file:
 with open("Files/json/Secrets.json", "r") as secret_file:
     secret = json.load(secret_file)
 
-def get_channels(guild_id):
+async def get_channels(guild_id):
     try:
-        with open(f"Files/Config/{guild_id}.json", "r") as f:
-            return json.load(f)
+        async with aiofiles.open(f"Files/Config/{guild_id}.json", "r") as f:
+            content = await f.read()
+        return json.loads(content)
     except Exception:
         return None
 
@@ -132,7 +134,7 @@ class GameAuthCog(commands.Cog):
                 try:
                     await auth_data["user"].send(embed=embed)
                 except Exception:
-                    channel_ids = get_channels(self.guild_id)
+                    channel_ids = await get_channels(self.guild_id)
                     guild = self.bot.get_guild(self.guild_id)
                     botmsgs = guild.get_channel(channel_ids["public_warn"])
                     await botmsgs.send(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
@@ -149,7 +151,7 @@ class GameAuthCog(commands.Cog):
                     try:
                         await auth_data["user"].send(embed=embed)
                     except Exception:
-                        channel_ids = get_channels(self.guild_id)
+                        channel_ids = await get_channels(self.guild_id)
                         guild = self.bot.get_guild(self.guild_id)
                         botmsgs = guild.get_channel(channel_ids["public_warn"])
                         await botmsgs.send(f"{auth_data["user"].mention} authentication failed. Please try again later.")
@@ -199,7 +201,7 @@ class GameAuthCog(commands.Cog):
                     try:
                         await discord_user.send(embed=embed)
                     except Exception:
-                        channel_ids = get_channels(self.guild_id)
+                        channel_ids = await get_channels(self.guild_id)
                         guild = self.bot.get_guild(self.guild_id)
                         botmsgs = guild.get_channel(channel_ids["public_warn"])
                         await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
@@ -224,7 +226,7 @@ class GameAuthCog(commands.Cog):
                 try:
                     await discord_user.send(embed=embed)
                 except Exception:
-                    channel_ids = get_channels(self.guild_id)
+                    channel_ids = await get_channels(self.guild_id)
                     botmsgs = guild.get_channel(channel_ids["public_warn"])
                     await botmsgs.send(f"**{discord_user.mention} Authentication successful!**\n"
                                        f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
@@ -235,7 +237,7 @@ class GameAuthCog(commands.Cog):
             try:
                 await discord_user.send(embed=embed)
             except Exception:
-                channel_ids = get_channels(self.guild_id)
+                channel_ids = await get_channels(self.guild_id)
                 guild = self.bot.get_guild(self.guild_id)
                 botmsgs = guild.get_channel(channel_ids["public_warn"])
                 await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
