@@ -217,7 +217,8 @@ class GameAuthCog(commands.Cog):
                     color=0xDE1919,
                     description=f"**{discord_user.mention} Authentication successful!**\n"
                                 f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
-                                f"\nYou can update your rank using **/update-rank** if it changes"
+                                f"\nYou can update your rank using **/update-rank** if it changes,"
+                                f"\nor **/remove-rank** to remove it."
                 )
                 embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                 try:
@@ -274,17 +275,33 @@ class GameAuthCog(commands.Cog):
         await member.add_roles(new_rank_role)
         await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
     
-    @app_commands.command(name="remove-rank", description="Remove your rank badge.")
+    @app_commands.command(name="remove-rank", description="Remove your rank badge and unlink your accounts.")
     async def remove_rank(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         guild = self.bot.get_guild(GUILD_ID)
         member = guild.get_member(interaction.user.id)
-        
+        roles_removed = False
         for role_name, role_id in self.rank_roles.items():
             role = guild.get_role(role_id)
             if role in member.roles:
                 await member.remove_roles(role)
-        await interaction.followup.send(f"Your rank badge has been removed", ephemeral=True)
+                roles_removed = True
+        
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("DELETE FROM users WHERE discord_id = ?", (str(interaction.user.id),)) as cursor:
+                await db.commit()
+                row_deleted = cursor.rowcount > 0
+        
+        if not roles_removed and not row_deleted:
+            response = "You don't have any rank badge or linked account to remove."
+        elif not roles_removed and row_deleted:
+            response = "Your linked account has been unlinked, but no rank badge was found to remove."
+        elif roles_removed and not row_deleted:
+            response = "Your rank badge has been removed, but no linked account was found to unlink."
+        else:
+            response = "Your rank badge has been removed, and your account has been unlinked."
+        
+        await interaction.followup.send(response, ephemeral=True)
 
 
 async def setup(bot:commands.Bot):
