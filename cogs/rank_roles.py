@@ -13,6 +13,7 @@ import asyncio
 import json
 import aiofiles
 from discord_timestamps import TimestampType
+import re
 
 with open("Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
@@ -133,7 +134,7 @@ class GameAuthCog(commands.Cog):
     async def on_message(self, message):
         if message.channel.id != self.global_chat_id:
             return
-        if not (message.webhook_id or DEBUG) or not message.author.display_name.endswith("[Game Chat]"):
+        if not (message.webhook_id or DEBUG) or not (message.author.display_name == "Bot"):
             return
         now = datetime.now(tz=timezone.utc)
         expired_users = []
@@ -149,8 +150,10 @@ class GameAuthCog(commands.Cog):
             elif auth_data["code"] in message.content:
                 await asyncio.sleep(0.5)
                 await message.delete()
+                match = re.search(r"PlayFabId: (\w+)", message.content)
+                playfab_id = match.group(1)
                 try:
-                    await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id)
+                    await self.process_authentication(playfab_id, user_id)
                 except Exception:
                     traceback.print_exc()
                     embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
