@@ -88,6 +88,7 @@ class GameAuthCog(commands.Cog):
         self.global_chat_id = GLOBAL_CHAT_CHANNEL_ID
         self.rank_roles = RANK_ROLES
         self.auth_requests = {}
+        self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
     
@@ -106,19 +107,25 @@ class GameAuthCog(commands.Cog):
     async def cog_unload(self):
         await self.session.close()
     
+    async def send_warn_to_channel(self, message):
+        channel_ids = await get_channels(self.guild_id)
+        guild = self.bot.get_guild(self.guild_id)
+        botmsgs = guild.get_channel(channel_ids["public_warn"])
+        await botmsgs.send(message)
+    
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     @app_commands.checks.cooldown(1, 600.0, key=lambda i: (i.guild_id, i.user.id))
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
-        code = f"/verify {(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #+ "(Do not copy/paste this unless you know why)"
+        code = f"{(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #(Do not copy/paste this unless you know why)
         self.auth_requests[interaction.user.id] = {
             "code": code,
             "expires": datetime.now(tz=timezone.utc) + timedelta(minutes=10),
             "user": interaction.user,
             "channel": interaction.channel,
         }
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** **Open Legion TD 2** and,\nsend this message in the **Global Chat**:"
-                                                          f"\n```{code}```")
+        embed = discord.Embed(color=self.color, description=f"**{interaction.user.mention}** **Open Legion TD 2** and,\nsend this command in the **Global Chat**:"
+                                                          f"\n```/verify {code}```")
         embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         await interaction.followup.send(embed=embed, ephemeral=True)
     
@@ -132,57 +139,48 @@ class GameAuthCog(commands.Cog):
         expired_users = []
         for user_id, auth_data in list(self.auth_requests.items()):
             if now > auth_data["expires"]:
-                embed = discord.Embed(color=0xDE1919, description=f"**{auth_data["user"].mention}** authentication timed out. Please try again using /rank.")
+                embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication timed out. Please try again using /rank.")
                 embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                 try:
                     await auth_data["user"].send(embed=embed)
                 except Exception:
-                    channel_ids = await get_channels(self.guild_id)
-                    guild = self.bot.get_guild(self.guild_id)
-                    botmsgs = guild.get_channel(channel_ids["public_warn"])
-                    await botmsgs.send(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
+                    await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
                 await asyncio.sleep(0.5)
                 await message.delete()
                 try:
-                    await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id, auth_data["code"])
+                    await self.process_authentication(message.author.display_name.replace(" [Game Chat]", ""), user_id)
                 except Exception:
                     traceback.print_exc()
-                    embed = discord.Embed(color=0xDE1919, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
+                    embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
                     embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                     try:
                         await auth_data["user"].send(embed=embed)
                     except Exception:
-                        channel_ids = await get_channels(self.guild_id)
-                        guild = self.bot.get_guild(self.guild_id)
-                        botmsgs = guild.get_channel(channel_ids["public_warn"])
-                        await botmsgs.send(f"{auth_data["user"].mention} authentication failed. Please try again later.")
+                        await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication failed. Please try again later.")
                 break
         for user_id in expired_users:
             del self.auth_requests[user_id]
     
-    async def get_player_api_stats(self, playername, by_id = False):
-        if by_id:
-            player_id = playername
-        else:
-            request_type = 'players/byName/'
-            url = 'https://apiv2.legiontd2.com/' + request_type + playername
-            async with self.session.get(url) as response:
-                if response.status != 200:
-                    return 0, 0
-                playerprofile = json.loads(await response.text())
-            player_id = playerprofile["_id"]
+    async def get_player_api_stats(self, player_id):
+        request_type = 'players/byId/'
+        url = 'https://apiv2.legiontd2.com/' + request_type + player_id
+        async with self.session.get(url) as response:
+            if response.status != 200:
+                return 0, 0
+            playerprofile = json.loads(await response.text())
+        playername = playerprofile["playerName"]
         request_type = 'players/stats/'
         url = 'https://apiv2.legiontd2.com/' + request_type + player_id
         async with self.session.get(url) as response:
             if response.status != 200:
                 return 0, 0
-            return json.loads(await response.text()), player_id
+            return json.loads(await response.text()), playername
     
-    async def process_authentication(self, playername, discord_user_id, code):
+    async def process_authentication(self, player_id, discord_user_id):
         del self.auth_requests[discord_user_id]
-        stats, player_id = await self.get_player_api_stats(playername)
+        stats, playername = await self.get_player_api_stats(player_id)
         if not stats:
             return False
         try:
@@ -199,15 +197,12 @@ class GameAuthCog(commands.Cog):
                     result = await cursor.fetchone()
                 
                 if result and result[0] != str(discord_user_id):
-                    embed = discord.Embed(color=0xDE1919, description=f"**{discord_user.mention}** This game account is already linked to another Discord account.")
+                    embed = discord.Embed(color=self.color, description=f"**{discord_user.mention}** This game account is already linked to another Discord account.")
                     embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                     try:
                         await discord_user.send(embed=embed)
                     except Exception:
-                        channel_ids = await get_channels(self.guild_id)
-                        guild = self.bot.get_guild(self.guild_id)
-                        botmsgs = guild.get_channel(channel_ids["public_warn"])
-                        await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
+                        await self.send_warn_to_channel(f"{discord_user.mention} This game account is already linked to another Discord account.")
                     return False
                 await db.execute("""
                     INSERT OR REPLACE INTO users (discord_id, player_id, rank, ingame_name)
@@ -218,32 +213,23 @@ class GameAuthCog(commands.Cog):
             if rank_role_id:
                 rank_role = guild.get_role(rank_role_id)
                 await member.add_roles(rank_role)
-                embed = discord.Embed(
-                    color=0xDE1919,
-                    description=f"**{discord_user.mention} Authentication successful!**\n"
+                embed_message = (f"**{discord_user.mention} Authentication successful!**\n"
                                 f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
                                 f"\nYou can update your rank using **/update-rank** if it changes,"
-                                f"\nor **/remove-rank** to remove it."
-                )
+                                f"\nor **/remove-rank** to remove it.")
+                embed = discord.Embed(color=self.color,description=embed_message)
                 embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                 try:
                     await discord_user.send(embed=embed)
                 except Exception:
-                    channel_ids = await get_channels(self.guild_id)
-                    botmsgs = guild.get_channel(channel_ids["public_warn"])
-                    await botmsgs.send(f"**{discord_user.mention} Authentication successful!**\n"
-                                       f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
-                                       f"\nYou can update your rank using **/update-rank** if it changes")
+                    await self.send_warn_to_channel(embed_message)
         except aiosqlite.IntegrityError:
-            embed = discord.Embed(color=0xDE1919, description=f"**{discord_user.mention}** This game account is already linked to another Discord account.")
+            embed = discord.Embed(color=self.color, description=f"**{discord_user.mention}** This game account is already linked to another Discord account.")
             embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
             try:
                 await discord_user.send(embed=embed)
             except Exception:
-                channel_ids = await get_channels(self.guild_id)
-                guild = self.bot.get_guild(self.guild_id)
-                botmsgs = guild.get_channel(channel_ids["public_warn"])
-                await botmsgs.send(f"{discord_user.mention} This game account is already linked to another Discord account.")
+                await self.send_warn_to_channel(f"{discord_user.mention} This game account is already linked to another Discord account.")
         return True
     
     @app_commands.command(name="update-rank", description="Update your rank badge.")
@@ -259,7 +245,7 @@ class GameAuthCog(commands.Cog):
             return
         
         player_id = result[0]
-        stats, player_id = await self.get_player_api_stats(player_id, by_id=True)
+        stats, player_id = await self.get_player_api_stats(player_id)
         try:
             rank = get_rank_name(stats["overallElo"])
         except KeyError:
