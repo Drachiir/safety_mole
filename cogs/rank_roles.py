@@ -131,7 +131,7 @@ class GameAuthCog(commands.Cog):
         await interaction.followup.send(embed=embed, ephemeral=True)
     
     @commands.Cog.listener()
-    async def on_message(self, message):
+    async def on_message(self, message: discord.Message):
         if message.channel.id != self.global_chat_id:
             return
         if not (message.webhook_id or DEBUG) or not (message.author.display_name == "Bot"):
@@ -149,7 +149,7 @@ class GameAuthCog(commands.Cog):
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
                 await asyncio.sleep(0.5)
-                await message.delete()
+                await message.add_reaction("✅")
                 match = re.search(r"PlayFabId: (\w+)", message.content)
                 playfab_id = match.group(1)
                 try:
