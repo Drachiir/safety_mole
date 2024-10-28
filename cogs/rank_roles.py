@@ -1,6 +1,7 @@
 import pathlib
 import traceback
 import discord
+import discord_timestamps
 from discord import app_commands
 from discord.ext import commands, tasks
 import aiosqlite
@@ -11,6 +12,7 @@ from datetime import datetime, timedelta, timezone
 import asyncio
 import json
 import aiofiles
+from discord_timestamps import TimestampType
 
 with open("Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
@@ -105,6 +107,7 @@ class GameAuthCog(commands.Cog):
         await self.session.close()
     
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
+    @app_commands.checks.cooldown(1, 600.0, key=lambda i: (i.guild_id, i.user.id))
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
         code = f"/verify {(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #+ "(Do not copy/paste this unless you know why)"
@@ -244,6 +247,7 @@ class GameAuthCog(commands.Cog):
         return True
     
     @app_commands.command(name="update-rank", description="Update your rank badge.")
+    @app_commands.checks.cooldown(1, 600.0, key=lambda i: (i.guild_id, i.user.id))
     async def update_rank(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         async with aiosqlite.connect(self.db_path) as db:
@@ -276,6 +280,14 @@ class GameAuthCog(commands.Cog):
         new_rank_role = guild.get_role(self.rank_roles[rank])
         await member.add_roles(new_rank_role)
         await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
+    
+    @update_rank.error
+    @rank_role.error
+    async def on_test_error(self, interaction: discord.Interaction, error: app_commands.AppCommandError):
+        if isinstance(error, app_commands.CommandOnCooldown):
+            now_date = (datetime.now(tz=timezone.utc)+timedelta(seconds=error.retry_after)).timestamp()
+            timestamp = discord_timestamps.format_timestamp(now_date, TimestampType.RELATIVE)
+            await interaction.response.send_message(f"Command on cooldown, try again {timestamp}", ephemeral=True)
     
     @app_commands.command(name="show-profile", description="Show drachbot profile of a user, if they are verified.")
     async def show_profile(self, interaction: discord.Interaction, user: discord.Member = None):
