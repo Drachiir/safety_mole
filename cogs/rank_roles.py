@@ -107,7 +107,7 @@ class GameAuthCog(commands.Cog):
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
-        code = f"/{(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #+ "(Do not copy/paste this unless you know why)"
+        code = f"/verify {(''.join(random.choices(string.ascii_uppercase + string.digits, k=8)))}" #+ "(Do not copy/paste this unless you know why)"
         self.auth_requests[interaction.user.id] = {
             "code": code,
             "expires": datetime.now(tz=timezone.utc) + timedelta(minutes=10),
