@@ -135,7 +135,7 @@ class GameAuthCog(commands.Cog):
         await botmsgs.send(message)
     
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
-    @app_commands.checks.cooldown(1, 600.0, key=lambda i: (i.guild_id, i.user.id))
+    @app_commands.checks.cooldown(1, 20.0, key=lambda i: (i.guild_id, i.user.id))
     async def rank_role(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True, thinking=True)
         code = f"{(''.join(random.choices(string.ascii_uppercase + string.digits, k=12)))}" #(Do not copy/paste this unless you know why)
