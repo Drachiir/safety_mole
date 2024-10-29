@@ -119,8 +119,7 @@ class GameAuthCog(commands.Cog):
                     player_id TEXT UNIQUE,
                     discord_name TEXT,
                     ingame_name TEXT,
-                    rank TEXT,
-                    code TEXT
+                    rank TEXT
                 )
             """)
             await db.commit()
@@ -172,8 +171,12 @@ class GameAuthCog(commands.Cog):
                 await message.add_reaction("✅")
                 match = re.search(r"PlayFabId: (\w+)", message.content)
                 playfab_id = match.group(1)
+                match = re.search(r"OverallElo: (\w+)", message.content)
+                rank = match.group(1)
+                match = re.search(r"DisplayName: (\w+)", message.content)
+                playername = match.group(1)
                 try:
-                    await self.process_authentication(playfab_id, user_id, auth_data["code"])
+                    await self.process_authentication(playfab_id, user_id, rank, playername)
                 except Exception:
                     traceback.print_exc()
                     embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
@@ -201,15 +204,9 @@ class GameAuthCog(commands.Cog):
                 return 0, 0
             return json.loads(await response.text()), playername
     
-    async def process_authentication(self, player_id, discord_user_id, code):
+    async def process_authentication(self, player_id, discord_user_id, rank, playername):
         del self.auth_requests[discord_user_id]
-        stats, playername = await self.get_player_api_stats(player_id)
-        if not stats:
-            return False
-        try:
-            rank = get_rank_name(stats["overallElo"])
-        except KeyError:
-            return False
+        rank = get_rank_name(int(rank))
         discord_user = await self.bot.fetch_user(discord_user_id)
         guild = self.bot.get_guild(GUILD_ID)
         member = guild.get_member(discord_user_id)
@@ -232,9 +229,9 @@ class GameAuthCog(commands.Cog):
                         await self.send_warn_to_channel(f"{discord_user.mention} This game account is already linked to another Discord account.")
                     return False
                 await db.execute("""
-                    INSERT OR REPLACE INTO users (discord_id, player_id, discord_name, ingame_name, rank, code)
-                    VALUES (?, ?, ?, ?, ?, ?)
-                """, (discord_user_id, player_id, member.display_name, playername, rank, code))
+                    INSERT OR REPLACE INTO users (discord_id, player_id, discord_name, ingame_name, rank)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (discord_user_id, player_id, member.display_name, playername, rank))
                 await db.commit()
             
             if rank_role_id:
