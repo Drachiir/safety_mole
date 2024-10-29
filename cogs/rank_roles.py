@@ -101,7 +101,7 @@ class GameAuthCog(commands.Cog):
     
     async def start_server(self):
         await self.runner.setup()
-        site = web.TCPSite(self.runner, '0.0.0.0', 42069)
+        site = web.TCPSite(self.runner, '0.0.0.0', 42070)
         await site.start()
     
     async def verify_endpoint(self, request):
