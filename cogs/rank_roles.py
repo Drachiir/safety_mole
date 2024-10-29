@@ -117,8 +117,9 @@ class GameAuthCog(commands.Cog):
                 CREATE TABLE IF NOT EXISTS users (
                     discord_id TEXT PRIMARY KEY,
                     player_id TEXT UNIQUE,
-                    rank TEXT,
+                    discord_name TEXT,
                     ingame_name TEXT,
+                    rank TEXT,
                     code TEXT
                 )
             """)
@@ -231,9 +232,9 @@ class GameAuthCog(commands.Cog):
                         await self.send_warn_to_channel(f"{discord_user.mention} This game account is already linked to another Discord account.")
                     return False
                 await db.execute("""
-                    INSERT OR REPLACE INTO users (discord_id, player_id, rank, ingame_name, code)
+                    INSERT OR REPLACE INTO users (discord_id, player_id, discord_name, ingame_name, rank, code)
                     VALUES (?, ?, ?, ?, ?)
-                """, (discord_user_id, player_id, rank, playername, code))
+                """, (discord_user_id, player_id, member.display_name, playername, rank, code))
                 await db.commit()
             
             if rank_role_id:
