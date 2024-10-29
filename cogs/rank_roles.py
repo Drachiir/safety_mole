@@ -233,7 +233,7 @@ class GameAuthCog(commands.Cog):
                     return False
                 await db.execute("""
                     INSERT OR REPLACE INTO users (discord_id, player_id, discord_name, ingame_name, rank, code)
-                    VALUES (?, ?, ?, ?, ?)
+                    VALUES (?, ?, ?, ?, ?, ?)
                 """, (discord_user_id, player_id, member.display_name, playername, rank, code))
                 await db.commit()
             
