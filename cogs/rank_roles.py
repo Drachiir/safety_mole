@@ -96,7 +96,7 @@ class GameAuthCog(commands.Cog):
         self.bot.loop.create_task(self.create_db())
         
         self.web_app = web.Application()
-        self.web_app.add_routes([web.post('/verify', self.verify_endpoint)])
+        self.web_app.add_routes([web.post('/ltd2', self.verify_endpoint)])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
     
