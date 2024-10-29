@@ -14,6 +14,7 @@ import json
 import aiofiles
 from discord_timestamps import TimestampType
 import re
+from aiohttp import web
 
 with open("Files/json/rank_roles.json", "r") as config_file:
     config = json.load(config_file)
@@ -92,7 +93,29 @@ class GameAuthCog(commands.Cog):
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
+        
+        self.web_app = web.Application()
+        self.web_app.add_routes([web.post('/verify', self.verify_endpoint)])
+        self.runner = web.AppRunner(self.web_app)
+        self.bot.loop.create_task(self.start_server())
     
+    async def start_server(self):
+        await self.runner.setup()
+        site = web.TCPSite(self.runner, '0.0.0.0', 42069)
+        await site.start()
+    
+    async def verify_endpoint(self, request):
+        data = await request.json()
+        player_id = data.get("player_id")
+        code = data.get("code")
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT 1 FROM users WHERE player_id = ? AND code = ?", (player_id, code)) as cursor:
+                result = await cursor.fetchone()
+        if result:
+            return web.json_response({"status": "valid", "message": "The player_id and code combination is valid."})
+        else:
+            return web.json_response({"status": "invalid", "message": "Invalid player_id or code."}, status=400)
+        
     async def create_db(self):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
@@ -100,12 +123,14 @@ class GameAuthCog(commands.Cog):
                     discord_id TEXT PRIMARY KEY,
                     player_id TEXT UNIQUE,
                     rank TEXT,
-                    ingame_name TEXT
+                    ingame_name TEXT,
+                    code TEXT
                 )
             """)
             await db.commit()
     
     async def cog_unload(self):
+        await self.runner.cleanup()
         await self.session.close()
     
     async def send_warn_to_channel(self, message):
@@ -153,7 +178,7 @@ class GameAuthCog(commands.Cog):
                 match = re.search(r"PlayFabId: (\w+)", message.content)
                 playfab_id = match.group(1)
                 try:
-                    await self.process_authentication(playfab_id, user_id)
+                    await self.process_authentication(playfab_id, user_id, auth_data["code"])
                 except Exception:
                     traceback.print_exc()
                     embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
@@ -181,7 +206,7 @@ class GameAuthCog(commands.Cog):
                 return 0, 0
             return json.loads(await response.text()), playername
     
-    async def process_authentication(self, player_id, discord_user_id):
+    async def process_authentication(self, player_id, discord_user_id, code):
         del self.auth_requests[discord_user_id]
         stats, playername = await self.get_player_api_stats(player_id)
         if not stats:
@@ -208,9 +233,9 @@ class GameAuthCog(commands.Cog):
                         await self.send_warn_to_channel(f"{discord_user.mention} This game account is already linked to another Discord account.")
                     return False
                 await db.execute("""
-                    INSERT OR REPLACE INTO users (discord_id, player_id, rank, ingame_name)
-                    VALUES (?, ?, ?, ?)
-                """, (discord_user_id, player_id, rank, playername))
+                    INSERT OR REPLACE INTO users (discord_id, player_id, rank, ingame_name, code)
+                    VALUES (?, ?, ?, ?, ?)
+                """, (discord_user_id, player_id, rank, playername, code))
                 await db.commit()
             
             if rank_role_id:
