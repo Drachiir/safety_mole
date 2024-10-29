@@ -109,9 +109,8 @@ class GameAuthCog(commands.Cog):
         data = await request.json()
         player_id = data.get("player_id")
         code = data.get("code")
-        await asyncio.sleep(0.5)
+        await asyncio.sleep(0.2)
         if player_id in self.valid_combos and self.valid_combos.get(player_id) == code:
-            del self.valid_combos[player_id]
             return web.json_response({"status": "valid", "message": "The player_id and code combination is valid."})
         else:
             return web.json_response({"status": "invalid", "message": "Invalid player_id or code."}, status=400)
@@ -173,7 +172,6 @@ class GameAuthCog(commands.Cog):
                     await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
                 expired_users.append(user_id)
             elif auth_data["code"] in message.content:
-                await asyncio.sleep(0.5)
                 await message.add_reaction("✅")
                 match = re.search(r"PlayFabId: (\w+)", message.content)
                 playfab_id = match.group(1)
