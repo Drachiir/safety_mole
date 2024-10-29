@@ -96,7 +96,7 @@ class GameAuthCog(commands.Cog):
         self.bot.loop.create_task(self.create_db())
         
         self.web_app = web.Application()
-        self.web_app.add_routes([web.post('/ltd2', self.verify_endpoint)])
+        self.web_app.add_routes([web.get('/ltd2', self.verify_endpoint)])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
     
@@ -106,9 +106,8 @@ class GameAuthCog(commands.Cog):
         await site.start()
     
     async def verify_endpoint(self, request):
-        data = await request.json()
-        player_id = data.get("player_id")
-        code = data.get("code")
+        player_id = request.query.get("player_id")
+        code = request.query.get("code")
         await asyncio.sleep(0.2)
         if player_id in self.valid_combos and self.valid_combos.get(player_id) == code:
             return web.json_response({"status": "valid", "message": "The player_id and code combination is valid."})
