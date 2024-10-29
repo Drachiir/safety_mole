@@ -90,6 +90,7 @@ class GameAuthCog(commands.Cog):
         self.global_chat_id = GLOBAL_CHAT_CHANNEL_ID
         self.rank_roles = RANK_ROLES
         self.auth_requests = {}
+        self.valid_combos = {}
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
@@ -108,10 +109,9 @@ class GameAuthCog(commands.Cog):
         data = await request.json()
         player_id = data.get("player_id")
         code = data.get("code")
-        async with aiosqlite.connect(self.db_path) as db:
-            async with db.execute("SELECT 1 FROM users WHERE player_id = ? AND code = ?", (player_id, code)) as cursor:
-                result = await cursor.fetchone()
-        if result:
+        await asyncio.sleep(0.5)
+        if player_id in self.valid_combos and self.valid_combos.get(player_id) == code:
+            del self.valid_combos[player_id]
             return web.json_response({"status": "valid", "message": "The player_id and code combination is valid."})
         else:
             return web.json_response({"status": "invalid", "message": "Invalid player_id or code."}, status=400)
@@ -177,6 +177,7 @@ class GameAuthCog(commands.Cog):
                 await message.add_reaction("✅")
                 match = re.search(r"PlayFabId: (\w+)", message.content)
                 playfab_id = match.group(1)
+                self.valid_combos[playfab_id] = auth_data["code"]
                 try:
                     await self.process_authentication(playfab_id, user_id, auth_data["code"])
                 except Exception:
