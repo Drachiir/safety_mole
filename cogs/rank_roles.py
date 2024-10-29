@@ -158,8 +158,8 @@ class GameAuthCog(commands.Cog):
     async def on_message(self, message: discord.Message):
         if message.channel.id != self.global_chat_id:
             return
-        if not (message.webhook_id or DEBUG) or not (message.author.display_name == "Bot"):
-            return
+        # if not (message.webhook_id or DEBUG) or not (message.author.display_name == "Bot"):
+        #     return
         now = datetime.now(tz=timezone.utc)
         expired_users = []
         for user_id, auth_data in list(self.auth_requests.items()):
