@@ -67,20 +67,6 @@ rank_emotes = {
     "Grandmaster": "<:GrandMaster:1299633635431022657>",
     "Legend": "<:Legend:1299633637049761792>"
 }
-# rank_emotes = {
-#     "Unranked": "<:Unranked:1241064654717980723>",
-#     "Bronze": "<:Bronze:1217999684484862057>",
-#     "Silver": "<:Silver:1217999706555158631>",
-#     "Gold": "<:Gold:1217999690369335407>",
-#     "Platinum": "<:Platinum:1217999701337571379>",
-#     "Diamond": "<:Diamond:1217999686888325150>",
-#     "Expert": "<:Expert:1217999688494747718>",
-#     "Master": "<:Master:1217999699114590248>",
-#     "SeniorMaster": "<:SeniorMaster:1217999704349081701>",
-#     "Grandmaster": "<:Grandmaster:1217999691883741224>",
-#     "Legend": "<:Legend:1217999693234176050>"
-# }
-
 
 class GameAuthCog(commands.Cog):
     def __init__(self, bot: commands.Bot):
@@ -165,45 +151,6 @@ class GameAuthCog(commands.Cog):
                                                           f"\n```/verify {code}```")
         embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         await interaction.followup.send(embed=embed, ephemeral=True)
-    
-    # @commands.Cog.listener()
-    # async def on_message(self, message: discord.Message):
-    #     if message.channel.id != self.global_chat_id:
-    #         return
-    #     # if not (message.webhook_id or DEBUG) or not (message.author.display_name == "Bot"):
-    #     #     return
-    #     now = datetime.now(tz=timezone.utc)
-    #     expired_users = []
-    #     for user_id, auth_data in list(self.auth_requests.items()):
-    #         if now > auth_data["expires"]:
-    #             embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication timed out. Please try again using /rank.")
-    #             embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
-    #             try:
-    #                 await auth_data["user"].send(embed=embed)
-    #             except Exception:
-    #                 await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication timed out. Please try again using /rank.")
-    #             expired_users.append(user_id)
-    #         elif auth_data["code"] in message.content:
-    #             await message.add_reaction("✅")
-    #             match = re.search(r"PlayFabId: (\w+)", message.content)
-    #             playfab_id = match.group(1)
-    #             match = re.search(r"OverallElo: (\w+)", message.content)
-    #             rank = match.group(1)
-    #             match = re.search(r"DisplayName: (\w+)", message.content)
-    #             playername = match.group(1)
-    #             try:
-    #                 await self.process_authentication(playfab_id, user_id, rank, playername)
-    #             except Exception:
-    #                 traceback.print_exc()
-    #                 embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
-    #                 embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
-    #                 try:
-    #                     await auth_data["user"].send(embed=embed)
-    #                 except Exception:
-    #                     await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication failed. Please try again later.")
-    #             break
-    #     for user_id in expired_users:
-    #         del self.auth_requests[user_id]
     
     async def get_player_api_stats(self, player_id):
         request_type = 'players/byId/'
