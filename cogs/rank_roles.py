@@ -33,6 +33,7 @@ async def get_channels(guild_id):
 GUILD_ID = config["GUILD_ID"]
 GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
 RANK_ROLES = {rank: int(role_id) for rank, role_id in config["RANK_ROLES"].items()}
+RANK_ROLES2 = {rank: int(role_id) for rank, role_id in config["RANK_ROLES2"].items()}
 DB_PATH = str(pathlib.Path(__file__).parent.parent.resolve()) + config["DB_PATH"]
 DEBUG = config["DEBUG"]
 
@@ -75,6 +76,7 @@ class GameAuthCog(commands.Cog):
         self.guild_id = GUILD_ID
         self.global_chat_id = GLOBAL_CHAT_CHANNEL_ID
         self.rank_roles = RANK_ROLES
+        self.rank_roles2 = RANK_ROLES2
         self.auth_requests = {}
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
@@ -315,7 +317,7 @@ class GameAuthCog(commands.Cog):
         await interaction.followup.send(response, ephemeral=True)
     
     @app_commands.command(name="toggle-rank-role", description="Toggle rank role over other roles such as Community Helper.")
-    async def remove_rank(self, interaction: discord.Interaction):
+    async def toggle_rank(self, interaction: discord.Interaction):
         await interaction.response.defer(ephemeral=True)
         guild = self.bot.get_guild(GUILD_ID)
         member = guild.get_member(interaction.user.id)
@@ -323,7 +325,18 @@ class GameAuthCog(commands.Cog):
             role = guild.get_role(role_id)
             if role in member.roles:
                 await member.remove_roles(role)
-        
+                new_role = guild.get_role(self.rank_roles2[role_name])
+                await member.add_roles(new_role)
+                break
+        else:
+            for role_name, role_id in self.rank_roles2.items():
+                role = guild.get_role(role_id)
+                if role in member.roles:
+                    await member.remove_roles(role)
+                    new_role = guild.get_role(self.rank_roles[role_name])
+                    await member.add_roles(new_role)
+                    break
+                    
         response = f"Rank role toggled."
         await interaction.followup.send(response, ephemeral=True)
 

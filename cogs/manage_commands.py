@@ -39,29 +39,29 @@ class ManageCommands(commands.Cog):
         if ctx.author.name == "drachir_":
             print(await self.bot.tree.sync(guild=None))
     
-    @commands.command()
-    async def create_roles(self, ctx: commands.Context):
-        if ctx.author.name == "drachir_":
-            rank_emotes = {
-                "Unranked": "<:Unranked:1299633644746444830>",
-                "Bronze": "<:Bronze:1299633629802139709>",
-                "Silver": "<:Silver:1299633694662856705>",
-                "Gold": "<:Gold:1299633634596098078>",
-                "Platinum": "<:Platinum:1299633639788777544>",
-                "Diamond": "<:Diamond:1299633630695522327>",
-                "Expert": "<:Expert:1299633632650199091>",
-                "Master": "<:Master:1299633638534811659>",
-                "SeniorMaster": "<:SeniorMaster:1299633641051394109>",
-                "Grandmaster": "<:GrandMaster:1299633635431022657>",
-                "Legend": "<:Legend:1299633637049761792>"
-            }
-            with open("Files/json/rank_roles.json", "r") as config_file:
-                config = json.load(config_file)
-            GUILD_ID = config["GUILD_ID"]
-            guild = self.bot.get_guild(GUILD_ID)
-            for i, rank in enumerate(rank_emotes):
-                await asyncio.sleep(1)
-                await guild.create_role(name=rank)
+    # @commands.command()
+    # async def create_roles(self, ctx: commands.Context):
+    #     if ctx.author.name == "drachir_":
+    #         rank_emotes = {
+    #             "Unranked": "<:Unranked:1299633644746444830>",
+    #             "Bronze": "<:Bronze:1299633629802139709>",
+    #             "Silver": "<:Silver:1299633694662856705>",
+    #             "Gold": "<:Gold:1299633634596098078>",
+    #             "Platinum": "<:Platinum:1299633639788777544>",
+    #             "Diamond": "<:Diamond:1299633630695522327>",
+    #             "Expert": "<:Expert:1299633632650199091>",
+    #             "Master": "<:Master:1299633638534811659>",
+    #             "SeniorMaster": "<:SeniorMaster:1299633641051394109>",
+    #             "Grandmaster": "<:GrandMaster:1299633635431022657>",
+    #             "Legend": "<:Legend:1299633637049761792>"
+    #         }
+    #         with open("Files/json/rank_roles.json", "r") as config_file:
+    #             config = json.load(config_file)
+    #         GUILD_ID = config["GUILD_ID"]
+    #         guild = self.bot.get_guild(GUILD_ID)
+    #         for i, rank in enumerate(rank_emotes):
+    #             await asyncio.sleep(1)
+    #             await guild.create_role(name=rank)
 
 async def setup(bot: commands.Bot):
     await bot.add_cog(ManageCommands(bot))
