@@ -313,6 +313,19 @@ class GameAuthCog(commands.Cog):
             response = "Your rank badge has been removed, and your account has been unlinked."
         
         await interaction.followup.send(response, ephemeral=True)
+    
+    @app_commands.command(name="toggle-rank-role", description="Toggle rank role over other roles such as Community Helper.")
+    async def remove_rank(self, interaction: discord.Interaction):
+        await interaction.response.defer(ephemeral=True)
+        guild = self.bot.get_guild(GUILD_ID)
+        member = guild.get_member(interaction.user.id)
+        for role_name, role_id in self.rank_roles.items():
+            role = guild.get_role(role_id)
+            if role in member.roles:
+                await member.remove_roles(role)
+        
+        response = f"Rank role toggled."
+        await interaction.followup.send(response, ephemeral=True)
 
 
 async def setup(bot:commands.Bot):
