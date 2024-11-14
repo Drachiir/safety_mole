@@ -254,9 +254,14 @@ class GameAuthCog(commands.Cog):
             role = guild.get_role(role_id)
             if role in member.roles:
                 await member.remove_roles(role)
-        
-        new_rank_role = guild.get_role(self.rank_roles[rank])
-        await member.add_roles(new_rank_role)
+                new_rank_role = guild.get_role(self.rank_roles[rank])
+                await member.add_roles(new_rank_role)
+        for role_name, role_id in self.rank_roles2.items():
+            role = guild.get_role(role_id)
+            if role in member.roles:
+                await member.remove_roles(role)
+                new_rank_role = guild.get_role(self.rank_roles2[rank])
+                await member.add_roles(new_rank_role)
         await interaction.followup.send(f"Your rank has been updated to: {rank}{rank_emotes.get(rank)}", ephemeral=True)
     
     @update_rank.error
@@ -299,7 +304,11 @@ class GameAuthCog(commands.Cog):
             if role in member.roles:
                 await member.remove_roles(role)
                 roles_removed = True
-        
+        for role_name, role_id in self.rank_roles2.items():
+            role = guild.get_role(role_id)
+            if role in member.roles:
+                await member.remove_roles(role)
+                roles_removed = True
         async with aiosqlite.connect(self.db_path) as db:
             async with db.execute("DELETE FROM users WHERE discord_id = ?", (str(interaction.user.id),)) as cursor:
                 await db.commit()
