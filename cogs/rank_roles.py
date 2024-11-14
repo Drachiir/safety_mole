@@ -101,8 +101,11 @@ class GameAuthCog(commands.Cog):
         for user_id, auth_data in list(self.auth_requests.items()):
             if auth_data["code"] == code:
                 try:
-                    await self.process_authentication(playfab_id, user_id, rank, playername)
-                    return web.json_response({"status": "valid"})
+                    success = await self.process_authentication(playfab_id, user_id, rank, playername)
+                    if success:
+                        return web.json_response({"status": "valid"})
+                    else:
+                        return web.json_response({"status": "invalid"}, status=400)
                 except Exception:
                     traceback.print_exc()
                     embed = discord.Embed(color=self.color, description=f"**{auth_data["user"].mention}** authentication failed. Please try again later.")
