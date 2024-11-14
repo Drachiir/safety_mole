@@ -214,6 +214,7 @@ class GameAuthCog(commands.Cog):
                     await member.send(embed=embed)
                 except Exception:
                     await self.send_warn_to_channel(embed_message)
+                print(f"{member.display_name} successfully linked with legion account: {playername}")
         except aiosqlite.IntegrityError:
             embed = discord.Embed(color=self.color, description=f"**{member.mention}** This game account is already linked to another Discord account.")
             embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
