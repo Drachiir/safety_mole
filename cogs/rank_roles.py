@@ -176,10 +176,6 @@ class GameAuthCog(commands.Cog):
         guild = self.bot.get_guild(GUILD_ID)
         member = guild.get_member(discord_user_id)
         rank_role_id = self.rank_roles.get(rank)
-        for role_name, role_id in self.rank_roles.items():
-            role = guild.get_role(role_id)
-            if role in member.roles:
-                await member.remove_roles(role)
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 async with db.execute("SELECT discord_id FROM users WHERE player_id = ?", (player_id,)) as cursor:
@@ -200,6 +196,10 @@ class GameAuthCog(commands.Cog):
                 await db.commit()
             
             if rank_role_id:
+                for role_name, role_id in self.rank_roles.items():
+                    role = guild.get_role(role_id)
+                    if role in member.roles:
+                        await member.remove_roles(role)
                 rank_role = guild.get_role(rank_role_id)
                 await member.add_roles(rank_role)
                 embed_message = (f"**{member.mention} Authentication successful!**\n"
