@@ -60,6 +60,7 @@ class ManageCommands(commands.Cog):
             GUILD_ID = config["GUILD_ID"]
             guild = self.bot.get_guild(GUILD_ID)
             for i, rank in enumerate(rank_emotes):
+                await asyncio.sleep(1)
                 await guild.create_role(name=rank)
 
 async def setup(bot: commands.Bot):
