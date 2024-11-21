@@ -206,8 +206,14 @@ class GameAuthCog(commands.Cog):
                     role = guild.get_role(role_id)
                     if role in member.roles:
                         await member.remove_roles(role)
-                rank_role = guild.get_role(rank_role_id)
-                await member.add_roles(rank_role)
+                        new_rank_role = guild.get_role(self.rank_roles[rank])
+                        await member.add_roles(new_rank_role)
+                for role_name, role_id in self.rank_roles2.items():
+                    role = guild.get_role(role_id)
+                    if role in member.roles:
+                        await member.remove_roles(role)
+                        new_rank_role = guild.get_role(self.rank_roles2[rank])
+                        await member.add_roles(new_rank_role)
                 embed_message = (f"**{member.mention} Authentication successful!**\n"
                                 f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
                                 f"\nYou can update your rank using **/update-rank** if it changes,"
