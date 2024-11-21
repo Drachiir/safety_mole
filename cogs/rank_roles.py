@@ -144,7 +144,8 @@ class GameAuthCog(commands.Cog):
     
     @app_commands.command(name="rank", description="Start authentication process to get a rank badge.")
     @app_commands.checks.cooldown(1, 20.0, key=lambda i: (i.guild_id, i.user.id))
-    async def rank_role(self, interaction: discord.Interaction):
+    @app_commands.describe(text_output="Text only output if the Embed doesn't show.")
+    async def rank_role(self, interaction: discord.Interaction, text_output: bool=False):
         await interaction.response.defer(ephemeral=True, thinking=True)
         code = f"{(''.join(random.choices(string.ascii_uppercase + string.digits, k=12)))}" #(Do not copy/paste this unless you know why)
         self.auth_requests[interaction.user.id] = {
@@ -152,10 +153,13 @@ class GameAuthCog(commands.Cog):
             "user": interaction.user,
             "channel": interaction.channel,
         }
-        embed = discord.Embed(color=self.color, description=f"**{interaction.user.mention}** **Open Legion TD 2** and,\nsend this command in the **Global Chat**:"
-                                                          f"\n```/verify {code}```")
-        embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
-        await interaction.followup.send(embed=embed, ephemeral=True)
+        text_string = f"**{interaction.user.mention}** **Open Legion TD 2** and,\nsend this command in the **Global Chat**:\n```/verify {code}```"
+        if text_output:
+            await interaction.followup.send(text_string, ephemeral=True)
+        else:
+            embed = discord.Embed(color=self.color, description=text_string)
+            embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+            await interaction.followup.send(embed=embed, ephemeral=True)
     
     async def get_player_api_stats(self, player_id):
         request_type = 'players/byId/'
