@@ -367,15 +367,17 @@ class GameAuthCog(commands.Cog):
         response = f"Rank role toggled."
         await interaction.followup.send(response, ephemeral=True)
     
-    @tasks.loop(hours=24)
+    @tasks.loop(time=time(hour=22, minute=0, second=0, tzinfo=timezone.utc))
     async def scheduled_rank_update(self):
         print(f"Updating discord ranks...")
+        change_count = 0
         try:
             async with aiosqlite.connect(self.db_path) as db:
                 async with db.execute("SELECT discord_id, player_id, rank, ingame_name FROM users") as cursor:
                     all_users = await cursor.fetchall()
             guild = self.bot.get_guild(self.guild_id)
             for discord_id, player_id, current_rank, ingame_name in all_users:
+                await asyncio.sleep(0.5)
                 stats = await self.get_player_api_stats2(player_id)
                 if not stats:
                     continue
@@ -385,8 +387,9 @@ class GameAuthCog(commands.Cog):
                     continue
                     
                 if current_rank == new_rank:
-                    print(f"{ingame_name}'s rank didnt change.")
                     continue
+                else:
+                    change_count += 1
                     
                 async with aiosqlite.connect(self.db_path) as db:
                     await db.execute("UPDATE users SET rank = ? WHERE discord_id = ?", (new_rank, discord_id))
@@ -411,7 +414,7 @@ class GameAuthCog(commands.Cog):
         
         except Exception:
             traceback.print_exc()
-        print(f"Successfully updated rank roles.")
+        print(f"Successfully updated {change_count} rank roles.")
     
     @scheduled_rank_update.before_loop
     async def before_scheduled_rank_update(self):
