@@ -8,7 +8,7 @@ import aiosqlite
 import aiohttp
 import random
 import string
-from datetime import datetime, timedelta, timezone
+from datetime import datetime, time, timezone, timedelta
 import asyncio
 import json
 import aiofiles
@@ -81,7 +81,7 @@ class GameAuthCog(commands.Cog):
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
-        
+        self.scheduled_rank_update.start()
         self.web_app = web.Application()
         self.web_app.add_routes([web.get('/ltd2', self.verify_endpoint)])
         self.runner = web.AppRunner(self.web_app)
@@ -135,6 +135,7 @@ class GameAuthCog(commands.Cog):
     async def cog_unload(self):
         await self.runner.cleanup()
         await self.session.close()
+        self.scheduled_rank_update.cancel()
     
     async def send_warn_to_channel(self, message):
         channel_ids = await get_channels(self.guild_id)
@@ -175,6 +176,14 @@ class GameAuthCog(commands.Cog):
             if response.status != 200:
                 return 0, 0
             return json.loads(await response.text()), playername
+    
+    async def get_player_api_stats2(self, player_id):
+        request_type = 'players/stats/'
+        url = 'https://apiv2.legiontd2.com/' + request_type + player_id
+        async with self.session.get(url) as response:
+            if response.status != 200:
+                return 0, 0
+            return json.loads(await response.text())
     
     async def process_authentication(self, player_id, discord_user_id, rank, playername):
         del self.auth_requests[discord_user_id]
@@ -357,7 +366,56 @@ class GameAuthCog(commands.Cog):
                     
         response = f"Rank role toggled."
         await interaction.followup.send(response, ephemeral=True)
-
+    
+    @tasks.loop(hours=24)
+    async def scheduled_rank_update(self):
+        print(f"Updating discord ranks...")
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                async with db.execute("SELECT discord_id, player_id, rank, ingame_name FROM users") as cursor:
+                    all_users = await cursor.fetchall()
+            guild = self.bot.get_guild(self.guild_id)
+            for discord_id, player_id, current_rank, ingame_name in all_users:
+                stats = await self.get_player_api_stats2(player_id)
+                if not stats:
+                    continue
+                try:
+                    new_rank = get_rank_name(stats["overallElo"])
+                except KeyError:
+                    continue
+                    
+                if current_rank == new_rank:
+                    print(f"{ingame_name}'s rank didnt change.")
+                    continue
+                    
+                async with aiosqlite.connect(self.db_path) as db:
+                    await db.execute("UPDATE users SET rank = ? WHERE discord_id = ?", (new_rank, discord_id))
+                    await db.commit()
+                member = guild.get_member(int(discord_id))
+                if not member:
+                    continue
+                    
+                for role_name, role_id in self.rank_roles.items():
+                    role = guild.get_role(role_id)
+                    if role in member.roles:
+                        await member.remove_roles(role)
+                        await member.add_roles(guild.get_role(self.rank_roles.get(new_rank)))
+                        break
+        
+                for role_name, role_id in self.rank_roles2.items():
+                    role = guild.get_role(role_id)
+                    if role in member.roles:
+                        await member.remove_roles(role)
+                        await member.add_roles(guild.get_role(self.rank_roles2.get(new_rank)))
+                        break
+        
+        except Exception:
+            traceback.print_exc()
+        print(f"Successfully updated rank roles.")
+    
+    @scheduled_rank_update.before_loop
+    async def before_scheduled_rank_update(self):
+        await self.bot.wait_until_ready()
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(GameAuthCog(bot))
