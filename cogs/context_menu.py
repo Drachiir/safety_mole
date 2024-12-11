@@ -42,6 +42,7 @@ class ContextMenu(commands.Cog):
         self.ctx_warn = app_commands.ContextMenu(name='Warn User',callback=self.contextwarn)
         self.ctx_proxy = app_commands.ContextMenu(name='Proxy Reply',callback=self.contextproxy)
         self.ctx_mute = app_commands.ContextMenu(name='Mute User',callback=self.contextmute)
+        self.ctx_mass_delete = app_commands.ContextMenu(name='Mass delete', callback=self.context_mass_delete)
         #Add commands to command tree
         self.bot.tree.add_command(self.ctx_delete)
         self.bot.tree.add_command(self.ctx_ban)
@@ -50,6 +51,7 @@ class ContextMenu(commands.Cog):
         self.bot.tree.add_command(self.ctx_warn)
         self.bot.tree.add_command(self.ctx_proxy)
         self.bot.tree.add_command(self.ctx_mute)
+        self.bot.tree.add_command(self.ctx_mass_delete)
         
     async def cog_unload(self) -> None:
         self.bot.tree.remove_command(self.ctx_delete.name, type=self.ctx_delete.type)
@@ -59,6 +61,7 @@ class ContextMenu(commands.Cog):
         self.bot.tree.remove_command(self.ctx_warn.name, type=self.ctx_warn.type)
         self.bot.tree.remove_command(self.ctx_proxy.name, type=self.ctx_proxy.type)
         self.bot.tree.remove_command(self.ctx_mute.name, type=self.ctx_mute.type)
+        self.bot.tree.remove_command(self.ctx_mass_delete.name, type=self.ctx_mass_delete.type)
     
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
@@ -320,6 +323,68 @@ class ContextMenu(commands.Cog):
             pass
         await interaction.followup.send(f"{user.mention} has been muted for {duration}.", ephemeral=True)
 
+    class DeleteMessagesModal(discord.ui.Modal):
+        def __init__(self, interaction: discord.Interaction, target_message: discord.Message, bot: commands.Bot):
+            self.interaction = interaction
+            self.target_message = target_message
+            self.bot = bot
+            super().__init__(title="Mass Delete Messages")
+
+            self.add_item(discord.ui.TextInput(
+                label="Number of messages to delete",
+                placeholder="Enter a number",
+                required=True,
+                style=discord.TextStyle.short
+            ))
+
+        async def on_submit(self, interaction: discord.Interaction):
+            try:
+                num_messages = int(self.children[0].value)
+                if num_messages <= 0:
+                    raise ValueError("Number must be greater than 0.")
+            except ValueError as e:
+                await interaction.response.send_message(str(e), ephemeral=True)
+                return
+
+            webhook_name = self.target_message.webhook_id and self.target_message.author.name
+
+            if not webhook_name:
+                await interaction.response.send_message("The selected message is not from a webhook.", ephemeral=True)
+                return
+
+            await interaction.response.send_message(
+                f"Starting mass delete for {num_messages} messages from webhook '{webhook_name}'.",
+                ephemeral=True
+            )
+            deleted_messages = []
+            async for msg in self.target_message.channel.history(limit=5000):
+                if len(deleted_messages) >= num_messages:
+                    break
+                if msg.webhook_id and msg.author.name == webhook_name:
+                    deleted_messages.append(msg)
+                    await msg.delete()
+                await asyncio.sleep(0.5)
+
+            deleted_count = len(deleted_messages)
+            channel_ids = modcog.get_channels(interaction.guild.id)
+            modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+            if modlogs:
+                embed = discord.Embed(
+                    title="",
+                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{webhook_name}**.",
+                    color=discord.Color.red()
+                )
+                embed.add_field(name="Channel", value=self.target_message.channel.mention, inline=False)
+                embed.add_field(name="Messages Deleted", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline = False)
+                await modlogs.send(embed=embed)
+
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    async def context_mass_delete(self, interaction: discord.Interaction, message: discord.Message):
+        """
+        Context menu command to delete messages from a webhook.
+        """
+        await interaction.response.send_modal(self.DeleteMessagesModal(interaction, message, bot=self.bot))
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(ContextMenu(bot))

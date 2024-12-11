@@ -149,7 +149,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="warn", description="Warn a user")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be warned", reason="Warning reason")
+    @app_commands.describe(user="Select a user to be warned", reason="The user will see this as: You have been warned for {reason}.")
     async def warn(self, interaction: discord.Interaction, user: discord.User, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
