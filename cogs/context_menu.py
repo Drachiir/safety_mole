@@ -346,21 +346,21 @@ class ContextMenu(commands.Cog):
                 await interaction.response.send_message(str(e), ephemeral=True)
                 return
 
-            webhook_name = self.target_message.webhook_id and self.target_message.author.name
-
-            if not webhook_name:
-                await interaction.response.send_message("The selected message is not from a webhook.", ephemeral=True)
-                return
+            author_name = self.target_message.author.name
+            is_webhook = bool(self.target_message.webhook_id)
 
             await interaction.response.send_message(
-                f"Starting mass delete for {num_messages} messages from webhook '{webhook_name}'.",
+                f"Starting mass delete for {num_messages} messages from {'webhook' if is_webhook else 'user'} '{author_name}'.",
                 ephemeral=True
             )
             deleted_messages = []
             async for msg in self.target_message.channel.history(limit=5000):
                 if len(deleted_messages) >= num_messages:
                     break
-                if msg.webhook_id and msg.author.name == webhook_name:
+                if msg.webhook_id == self.target_message.webhook_id and msg.author.name == author_name:
+                    deleted_messages.append(msg)
+                    await msg.delete()
+                elif not msg.webhook_id and msg.author.id == self.target_message.author.id:
                     deleted_messages.append(msg)
                     await msg.delete()
                 await asyncio.sleep(0.5)
@@ -370,12 +370,12 @@ class ContextMenu(commands.Cog):
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             if modlogs:
                 embed = discord.Embed(
-                    title="",
-                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{webhook_name}**.",
+                    title="Messages Deleted",
+                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**.",
                     color=discord.Color.red()
                 )
                 embed.add_field(name="Channel", value=self.target_message.channel.mention, inline=False)
-                embed.add_field(name="Messages Deleted", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline = False)
+                embed.add_field(name="Messages Deleted", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline=False)
                 await modlogs.send(embed=embed)
 
     @app_commands.guild_only()
