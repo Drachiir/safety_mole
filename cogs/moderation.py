@@ -149,12 +149,12 @@ class Moderation(commands.Cog):
     @app_commands.command(name="warn", description="Warn a user")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(user="Select a user to be warned", reason="The user will see this as: You have been warned for {reason}.")
+    @app_commands.describe(user="Select a user to be warned", reason="The user will see this as: You have been warned: {reason}")
     async def warn(self, interaction: discord.Interaction, user: discord.User, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
                                                           f"\n**User id:** {user.id}\n**Reason:** {reason}")
-        embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned for {reason}")
+        embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
@@ -169,7 +169,7 @@ class Moderation(commands.Cog):
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
-            await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
+            await botmsgs.send(f"{user.mention} You have been warned: {reason}")
             await interaction.followup.send(f"{user.mention} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])

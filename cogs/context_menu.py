@@ -206,7 +206,7 @@ class ContextMenu(commands.Cog):
         reason = context_modal.answer.value
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
                                                           f"\n**User id:** {user.id}\n**Reason:** {reason}")
-        embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned for {reason}")
+        embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
@@ -221,7 +221,7 @@ class ContextMenu(commands.Cog):
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
-            await botmsgs.send(f"{user.mention} you have been warned for {reason}.")
+            await botmsgs.send(f"{user.mention} You have been warned: {reason}")
             await interaction.followup.send(f"{user.mention} has publicly been warned.", ephemeral=True)
             return
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
