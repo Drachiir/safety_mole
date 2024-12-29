@@ -384,7 +384,7 @@ class ContextMenu(commands.Cog):
                 else:
                     user_id = f"\n**User id:** {self.target_message.author.id}"
                 embed = discord.Embed(
-                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**."
+                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**"
                                 f"{user_id}\n"
                                 f"**Channel:** {self.target_message.channel.mention}\n",
                     color=discord.Color.red()
