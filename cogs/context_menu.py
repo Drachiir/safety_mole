@@ -95,7 +95,7 @@ class ContextMenu(commands.Cog):
             user_id = f"\n**User id:** {message.author.id}"
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
                                                           f"{user_id}"
-                                                          f"\n**Channel:** {message.channel.name}"
+                                                          f"\n**Channel:** {message.channel.mention}"
                                                           f"\n**Message Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
                                                           f"\n**Message Content:**\n{message.content}")
         if message.attachments:
@@ -324,10 +324,11 @@ class ContextMenu(commands.Cog):
         await interaction.followup.send(f"{user.mention} has been muted for {duration}.", ephemeral=True)
 
     class DeleteMessagesModal(discord.ui.Modal):
-        def __init__(self, interaction: discord.Interaction, target_message: discord.Message, bot: commands.Bot):
+        def __init__(self, interaction: discord.Interaction, target_message: discord.Message, bot: commands.Bot, session):
             self.interaction = interaction
             self.target_message = target_message
             self.bot = bot
+            self.session = session
             super().__init__(title="Mass Delete Messages")
 
             self.add_item(discord.ui.TextInput(
@@ -360,21 +361,34 @@ class ContextMenu(commands.Cog):
                 if msg.webhook_id == self.target_message.webhook_id and msg.author.name == author_name:
                     deleted_messages.append(msg)
                     await msg.delete()
+                    await asyncio.sleep(0.5)
                 elif not msg.webhook_id and msg.author.id == self.target_message.author.id:
                     deleted_messages.append(msg)
                     await msg.delete()
-                await asyncio.sleep(0.5)
+                    await asyncio.sleep(0.5)
 
             deleted_count = len(deleted_messages)
             channel_ids = modcog.get_channels(interaction.guild.id)
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             if modlogs:
+                if self.target_message.author.display_name.endswith("[Game Chat]"):
+                    request_type = 'players/byName/'
+                    playername = self.target_message.author.display_name.replace(" [Game Chat]", "")
+                    url = 'https://apiv2.legiontd2.com/' + request_type + playername
+                    async with self.session.get(url) as response:
+                        if response.status != 200:
+                            user_id = ""
+                        else:
+                            player_profile = json.loads(await response.text())
+                            user_id = f"\n**Kraken:** https://kraken.legiontd2.com/playerid/{player_profile["_id"]}"
+                else:
+                    user_id = f"\n**User id:** {self.target_message.author.id}"
                 embed = discord.Embed(
-                    title="Messages Deleted",
-                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**.",
+                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**.\n"
+                                f"{user_id}\n"
+                                f"Channel: {self.target_message.channel.mention}\n",
                     color=discord.Color.red()
                 )
-                embed.add_field(name="Channel", value=self.target_message.channel.mention, inline=False)
                 embed.add_field(name="Messages Deleted", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline=False)
                 await modlogs.send(embed=embed)
 
@@ -384,7 +398,7 @@ class ContextMenu(commands.Cog):
         """
         Context menu command to delete messages from a webhook.
         """
-        await interaction.response.send_modal(self.DeleteMessagesModal(interaction, message, bot=self.bot))
+        await interaction.response.send_modal(self.DeleteMessagesModal(interaction, message, bot=self.bot, session=self.session))
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(ContextMenu(bot))
