@@ -384,12 +384,12 @@ class ContextMenu(commands.Cog):
                 else:
                     user_id = f"\n**User id:** {self.target_message.author.id}"
                 embed = discord.Embed(
-                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**.\n"
+                    description=f"{interaction.user.mention} deleted {deleted_count} messages from **{author_name}**."
                                 f"{user_id}\n"
-                                f"Channel: {self.target_message.channel.mention}\n",
+                                f"**Channel:** {self.target_message.channel.mention}\n",
                     color=discord.Color.red()
                 )
-                embed.add_field(name="Messages Deleted", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline=False)
+                embed.add_field(name="Messages Deleted:", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline=False)
                 await modlogs.send(embed=embed)
 
     @app_commands.guild_only()
