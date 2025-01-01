@@ -79,13 +79,14 @@ class Listener(commands.Cog):
                 description=f"**{message.author.mention}** sent a message."
                             f"\n**Message Date:** {message.created_at.strftime('%d/%m/%Y, %H:%M:%S')}"
                             f"\n**Message Content:**\n{message.content}"
+                            f"{"\n**Attachments:**" if message.attachments else ""}"
             )
             files = []
             if message.attachments:
                 for i, att in enumerate(message.attachments):
-                    files.append(await att.to_file(filename=f"temp{i}.png"))
-                if len(files) == 1:
-                    embed.set_image(url="attachment://temp0.png")
+                    files.append(await att.to_file(filename=att.filename))
+                if len(files) == 1 and files[0].filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')):
+                    embed.set_image(url=f"attachment://{files[0].filename}")
                     await modmail.send(embed=embed, file=files[0])
                 else:
                     await modmail.send(embed=embed)
