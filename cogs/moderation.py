@@ -294,7 +294,7 @@ class Moderation(commands.Cog):
     @app_commands.command(name="proxy-dm", description="Uses Safety Mole to write a DIRECT MESSAGE to a user.")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    @app_commands.describe(channel="Select a user for your message", message="Write message")
+    @app_commands.describe(user="Select a user for your message", message="Write message")
     async def proxy_dm(self, interaction: discord.Interaction, message: str, user: discord.User):
         await interaction.response.defer(thinking=True, ephemeral=True)
         channel_ids = get_channels(interaction.guild.id)
