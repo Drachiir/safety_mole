@@ -290,6 +290,23 @@ class Moderation(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         await interaction.followup.send(f"Message has been sent.", ephemeral=True)
+
+    @app_commands.command(name="proxy-dm", description="Uses Safety Mole to write a DIRECT MESSAGE to a user.")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    @app_commands.describe(channel="Select a user for your message", message="Write message")
+    async def proxy_dm(self, interaction: discord.Interaction, message: str, user: discord.User):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        channel_ids = get_channels(interaction.guild.id)
+        if not channel_ids:
+            await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
+            return
+        await user.send(message)
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** sent a proxy DM to {user.mention}"
+                                                          f"\n**Message content:**\n{message}")
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        await modlogs.send(embed=embed)
+        await interaction.followup.send(f"Message has been sent.", ephemeral=True)
     
     @app_commands.command(name="setup", description="Select channels for public-warn and mod-logs")
     @app_commands.guild_only()
