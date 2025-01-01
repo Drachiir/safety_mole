@@ -1,4 +1,5 @@
 import asyncio
+import os
 from datetime import datetime, timedelta, timezone
 import json
 import discord
@@ -64,11 +65,21 @@ class Listener(commands.Cog):
         else:
             if message.content == "?sync":
                 return
-            channel_ids = modcog.get_channels(159363816570880012)
+            json_file_path = os.path.join("Files", "banned_users.json")
+            if os.path.exists(json_file_path):
+                with open(json_file_path, "r") as file:
+                    banned_users = json.load(file)
+                if str(message.author.id) in banned_users:
+                    await message.channel.send("You are banned from using Mod Mail ❌")
+                    return
+            channel_ids = modcog.get_channels(self.bot.guild_id)
             modmail = await self.bot.fetch_channel(channel_ids["mod_mail"])
-            embed = discord.Embed(color=0xDE1919, description=f"**{message.author.mention}** sent a message."
-                                                              f"\n**Message Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
-                                                              f"\n**Message Content:**\n{message.content}")
+            embed = discord.Embed(
+                color=0xDE1919,
+                description=f"**{message.author.mention}** sent a message."
+                            f"\n**Message Date:** {message.created_at.strftime('%d/%m/%Y, %H:%M:%S')}"
+                            f"\n**Message Content:**\n{message.content}"
+            )
             files = []
             if message.attachments:
                 for i, att in enumerate(message.attachments):

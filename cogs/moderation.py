@@ -1,6 +1,7 @@
 import asyncio
 import datetime
 import json
+import os
 import pathlib
 import traceback
 import typing
@@ -305,6 +306,30 @@ class Moderation(commands.Cog):
             json.dump(channels, f)
             f.close()
         await interaction.followup.send(f"Setup done.", ephemeral=True)
+
+    @app_commands.command(name="modmail-ban", description="Ban someone from using the Mod Mail feature")
+    @app_commands.guild_only()
+    @app_commands.default_permissions(ban_members=True)
+    async def modmail_ban(self, interaction: discord.Interaction, user: discord.User):
+        await interaction.response.defer(thinking=True, ephemeral=True)
+        os.makedirs("Files", exist_ok=True)
+        json_file_path = os.path.join("Files", "banned_users.json")
+        if os.path.exists(json_file_path):
+            with open(json_file_path, "r") as file:
+                banned_users = json.load(file)
+        else:
+            banned_users = {}
+
+        banned_users[str(user.id)] = {"username": str(user), "banned_by": str(interaction.user)}
+        with open(json_file_path, "w") as file:
+            json.dump(banned_users, file, indent=4)
+
+        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}** from Mod Mail"
+                                                          f"\n**User id:** {user.id}")
+        channel_ids = get_channels(interaction.guild.id)
+        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        await modlogs.send(embed=embed)
+        await interaction.followup.send(f"User banned from Mod Mail.", ephemeral=True)
     
     @app_commands.command(name="chat-search", description="Search a chat for specific messages")
     @app_commands.guild_only()

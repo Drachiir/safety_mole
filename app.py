@@ -16,6 +16,7 @@ class Legion(commands.Bot):
         intents = discord.Intents.all()
         super().__init__(command_prefix="?", intents=intents)
         self.exts = []
+        self.guild_id = secret_file["guild_id"]
         for e in os.listdir("cogs"):
             if "__pycache__" in e:
                 continue
