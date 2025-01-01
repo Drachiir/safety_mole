@@ -69,7 +69,18 @@ class Listener(commands.Cog):
             embed = discord.Embed(color=0xDE1919, description=f"**{message.author.mention}** sent a message."
                                                               f"\n**Message Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
                                                               f"\n**Message Content:**\n{message.content}")
-            await modmail.send(embed=embed)
+            files = []
+            if message.attachments:
+                for i, att in enumerate(message.attachments):
+                    files.append(await att.to_file(filename=f"temp{i}.png"))
+                if len(files) == 1:
+                    embed.set_image(url="attachment://temp0.png")
+                    await modmail.send(embed=embed, file=files[0])
+                else:
+                    await modmail.send(embed=embed)
+                    await modmail.send(files=files)
+            else:
+                await modmail.send(embed=embed)
             await message.channel.send("Your message has been sent to the Moderation team ✅")
             return
     

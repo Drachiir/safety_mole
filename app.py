@@ -29,7 +29,7 @@ class Legion(commands.Bot):
     
     async def on_ready(self):
         print(f'"{self.user.display_name}" is now running!')
-        game = discord.CustomActivity("Keeping the discord safe")
+        game = discord.CustomActivity("Direct Message for Mod Mail")
         await self.change_presence(activity=game)
 
 
