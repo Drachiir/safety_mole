@@ -62,7 +62,15 @@ class Listener(commands.Cog):
                             pass
             return
         else:
-            await message.channel.send("This Bot does not accept messages. For ban appeals please visit https://legiontd2.com/bans")
+            if message.content == "?sync":
+                return
+            channel_ids = modcog.get_channels(159363816570880012)
+            modmail = await self.bot.fetch_channel(channel_ids["mod_mail"])
+            embed = discord.Embed(color=0xDE1919, description=f"**{message.author.mention}** sent a message."
+                                                              f"\n**Message Date:** {message.created_at.strftime("%d/%m/%Y, %H:%M:%S")}"
+                                                              f"\n**Message Content:**\n{message.content}")
+            await modmail.send(embed=embed)
+            await message.channel.send("Your message has been sent to the Moderation team ✅")
             return
     
     @commands.Cog.listener()

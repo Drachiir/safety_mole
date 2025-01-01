@@ -294,11 +294,12 @@ class Moderation(commands.Cog):
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
     @app_commands.describe(public_warn_channel="Select a channel for Public warnings", mod_logs="Select a channel for Mod-logs")
-    async def setup(self, interaction: discord.Interaction, public_warn_channel: discord.TextChannel, mod_logs: discord.TextChannel):
+    async def setup(self, interaction: discord.Interaction, public_warn_channel: discord.TextChannel, mod_logs: discord.TextChannel, mod_mail: discord.TextChannel):
         await interaction.response.defer(thinking=True, ephemeral=True)
         channels = {
             "public_warn": public_warn_channel.id,
-            "mod_logs": mod_logs.id
+            "mod_logs": mod_logs.id,
+            "mod_mail": mod_mail.id
         }
         with open(f"Files/Config/{interaction.guild.id}.json", "w") as f:
             json.dump(channels, f)
