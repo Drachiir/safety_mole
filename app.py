@@ -4,6 +4,8 @@ import discord
 from discord.ext import commands
 import logging
 
+from cogs.event_listeners import setup_persistent_views
+
 handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
 discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
 
@@ -29,6 +31,7 @@ class Legion(commands.Bot):
             await self.load_extension(extension)
     
     async def on_ready(self):
+        await setup_persistent_views(self)
         print(f'"{self.user.display_name}" is now running!')
         game = discord.CustomActivity("Direct Message for Mod Mail")
         await self.change_presence(activity=game)
