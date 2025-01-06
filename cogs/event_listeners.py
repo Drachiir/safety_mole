@@ -155,13 +155,13 @@ class Listener(commands.Cog):
                     files.append(await att.to_file(filename=att.filename))
                 if len(files) == 1 and files[0].filename.lower().endswith(('.png', '.jpg', '.jpeg', '.gif', '.bmp', '.tiff', '.webp')):
                     embed.set_image(url=f"attachment://{files[0].filename}")
-                    await modmail.send(embed=embed, file=files[0])
+                    await modmail.send(embed=embed, file=files[0], view=view)
                 else:
-                    await modmail.send(embed=embed)
+                    await modmail.send(embed=embed, view=view)
                     await modmail.send(files=files)
             else:
-                await modmail.send(embed=embed)
-            await modmail.send(view=view)
+                await modmail.send(embed=embed, view=view)
+
             await message.channel.send("Your message has been sent to the Moderation team ✅")
 
     @commands.Cog.listener()
