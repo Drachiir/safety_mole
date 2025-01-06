@@ -35,6 +35,10 @@ class ReplyModal(Modal):
         )
         await interaction.response.send_message(embed=embed)
 
+    async def on_error(self, error, interaction):
+        self.button.disabled = False
+        await interaction.message.edit(view=self.view)
+        raise error
 
 class ReplyButton(Button):
     def __init__(self, author_id, view):
@@ -46,9 +50,12 @@ class ReplyButton(Button):
         self.disabled = True
         await interaction.message.edit(view=self.parent_view)
 
-        # Show the modal
         modal = ReplyModal(author_id=self.author_id, button=self, view=self.parent_view)
         await interaction.response.send_modal(modal)
+
+        await asyncio.sleep(120)
+        self.disabled = False
+        await interaction.message.edit(view=self.parent_view)
 
 
 class ModMailView(View):
