@@ -147,7 +147,7 @@ class Listener(commands.Cog):
 
             embed = discord.Embed(
                 color=0xDE1919,
-                description=f"**{message.author.mention}** sent a message."
+                description=f"**{message.author.mention} ({message.author.name})** sent a message."
                             f"\n**Message Date:** {message.created_at.strftime('%d/%m/%Y, %H:%M:%S')}"
                             f"\n**Message Content:**\n{message.content}"
                             f"{'\n**Attachments:**' if message.attachments else ''}"
