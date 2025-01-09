@@ -30,7 +30,7 @@ class ReplyModal(Modal):
 
         embed = discord.Embed(
             color=0xDE1919,
-            description=f"**{interaction.user.mention}** replied to {user.mention}."
+            description=f"**{interaction.user.mention}** replied to **{user.mention} {user.name}**."
                         f"\n**Message Content:**\n{self.reply_content.value}"
         )
         await interaction.response.send_message(embed=embed)
@@ -147,7 +147,7 @@ class Listener(commands.Cog):
 
             embed = discord.Embed(
                 color=0xDE1919,
-                description=f"**{message.author.mention} ({message.author.name})** sent a message."
+                description=f"**{message.author.mention} {message.author.name}** sent a message."
                             f"\n**Message Date:** {message.created_at.strftime('%d/%m/%Y, %H:%M:%S')}"
                             f"\n**Message Content:**\n{message.content}"
                             f"{'\n**Attachments:**' if message.attachments else ''}"
