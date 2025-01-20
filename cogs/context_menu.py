@@ -11,6 +11,7 @@ from discord import app_commands, ui, Interaction
 from discord._types import ClientT
 from discord.ext import commands
 import cogs.moderation as modcog
+from util import create_mod_log_embed
 
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
@@ -91,7 +92,7 @@ class ContextMenu(commands.Cog):
                     player_profile = json.loads(await response.text())
                     user_id = f"\n**Kraken:** https://kraken.legiontd2.com/playerid/{player_profile["_id"]}"
         else:
-            embed_name = message.author.mention
+            embed_name = message.author.display_name
             user_id = f"\n**User id:** {message.author.id}"
         embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** deleted a message from **{embed_name}**"
                                                           f"{user_id}"
@@ -115,8 +116,7 @@ class ContextMenu(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "banned", user, reason)
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -144,8 +144,7 @@ class ContextMenu(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** soft-banned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "soft-banned", user, reason)
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -175,8 +174,7 @@ class ContextMenu(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** kicked **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "kicked", user, reason)
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -204,8 +202,7 @@ class ContextMenu(commands.Cog):
         await interaction.response.send_modal(context_modal)
         await context_modal.wait()
         reason = context_modal.answer.value
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "privately warned", user, reason)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         channel_ids = modcog.get_channels(interaction.guild.id)
@@ -216,8 +213,7 @@ class ContextMenu(commands.Cog):
             await user.send(embed=embed2)
         except Exception:
             #PUBLIC WARN
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** publicly warned **{user.mention}**"
-                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
+            embed = create_mod_log_embed(interaction.user, "publicly warned", user, reason)
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
@@ -266,9 +262,7 @@ class ContextMenu(commands.Cog):
                 duration_dt = timedelta(hours=int(duration.replace("h", "")))
             else:
                 duration_dt = timedelta(days=int(duration.replace("d", "")))
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
-                                                              f"\n**Duration:** {duration}"
-                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
+            embed = create_mod_log_embed(interaction.user, "muted", user, reason, duration=duration)
         except Exception:
             traceback.print_exc()
             await interaction.followup.send(f"Invalid duration input, needs to be a number followed by either m = minutes, h = hours or d= days.\n"

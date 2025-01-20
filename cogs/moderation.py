@@ -10,6 +10,8 @@ import discord
 from discord import app_commands
 from datetime import datetime, timedelta, timezone
 from discord.ext import commands
+import util
+from util import create_mod_log_embed
 
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
@@ -33,8 +35,7 @@ class Moderation(commands.Cog):
     async def ban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']="7days"):
         await interaction.response.defer(thinking=True, ephemeral=True)
         delete_message_days = int(delete_message_days.replace("days", ""))
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "banned", user, reason)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -66,8 +67,7 @@ class Moderation(commands.Cog):
         except discord.NotFound:
             await interaction.followup.send(f"User not found or invalid integer.", ephemeral=True)
             return
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** unbanned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "unbanned", user, reason)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -95,8 +95,7 @@ class Moderation(commands.Cog):
     async def softban(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: typing.Literal['1day', '3days', '5days', '7days']="7days"):
         await interaction.response.defer(thinking=True, ephemeral=True)
         delete_message_days = int(delete_message_days.replace("days", ""))
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** soft-banned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "soft-banned", user, reason)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -125,8 +124,7 @@ class Moderation(commands.Cog):
     @app_commands.describe(user="Select a user to be kicked", reason="Reason for the kick")
     async def kick(self, interaction: discord.Interaction, user: discord.User, reason: str, delete_message_days: int):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** kicked **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "kicked", user, reason)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -153,8 +151,7 @@ class Moderation(commands.Cog):
     @app_commands.describe(user="Select a user to be warned", reason="The user will see this as: You have been warned: {reason}")
     async def warn(self, interaction: discord.Interaction, user: discord.User, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** privately warned **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "privately warned", user, reason)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
         channel_ids = get_channels(interaction.guild.id)
@@ -165,8 +162,7 @@ class Moderation(commands.Cog):
             await user.send(embed=embed2)
         except Exception:
             #PUBLIC WARN
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** publicly warned **{user.mention}**"
-                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
+            embed = create_mod_log_embed(interaction.user, "publicly warned", user, reason)
             modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
             await modlogs.send(embed=embed)
             botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
@@ -188,10 +184,7 @@ class Moderation(commands.Cog):
                 duration_dt = timedelta(minutes=int(duration.replace("mins", "")))
             else:
                 duration_dt = timedelta(days=int(duration.replace("days", "")))
-            
-            embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** muted **{user.mention}**"
-                                                              f"\n**Duration:** {duration}"
-                                                              f"\n**User id:** {user.id}\n**Reason:** {reason}")
+            embed = create_mod_log_embed(interaction.user, "muted", user, reason, duration=duration)
             try:
                 await user.timeout(duration_dt, reason=reason)
             except Exception:
@@ -249,8 +242,7 @@ class Moderation(commands.Cog):
     @app_commands.describe(user="Select a user to be unmuted", reason="Unmute reason")
     async def unmute(self, interaction: discord.Interaction, user: discord.Member, reason: str):
         await interaction.response.defer(thinking=True, ephemeral=True)
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** unmuted **{user.mention}**"
-                                                          f"\n**User id:** {user.id}\n**Reason:** {reason}")
+        embed = create_mod_log_embed(interaction.user, "unmuted", user, reason)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
