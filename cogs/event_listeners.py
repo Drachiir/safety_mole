@@ -175,7 +175,7 @@ class Listener(commands.Cog):
     async def on_thread_create(self, thread:discord.Thread):
         while not thread.starter_message:
             await asyncio.sleep(0.5)
-        if thread.parent.name in ["bugs-and-troubleshooting", "suggestions"]:
+        if thread.parent.name in ["bugs-and-troubleshooting", "suggestions", "game-balance"]:
             await thread.starter_message.pin()
         for tag in thread.applied_tags:
             if "Bug report" == tag.name:
