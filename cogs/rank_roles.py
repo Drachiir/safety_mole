@@ -34,6 +34,7 @@ GUILD_ID = config["GUILD_ID"]
 GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
 RANK_ROLES = {rank: int(role_id) for rank, role_id in config["RANK_ROLES"].items()}
 RANK_ROLES2 = {rank: int(role_id) for rank, role_id in config["RANK_ROLES2"].items()}
+VERIFIED_ROLE = config["VERIFIED_ROLE"]
 DB_PATH = str(pathlib.Path(__file__).parent.parent.resolve()) + config["DB_PATH"]
 DEBUG = config["DEBUG"]
 
@@ -77,6 +78,7 @@ class GameAuthCog(commands.Cog):
         self.global_chat_id = GLOBAL_CHAT_CHANNEL_ID
         self.rank_roles = RANK_ROLES
         self.rank_roles2 = RANK_ROLES2
+        self.verified_role = VERIFIED_ROLE
         self.auth_requests = {}
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
@@ -221,6 +223,8 @@ class GameAuthCog(commands.Cog):
                         await member.remove_roles(role)
                 rank_role = guild.get_role(rank_role_id)
                 await member.add_roles(rank_role)
+                verified_role = guild.get_role(self.verified_role)
+                await member.add_roles(verified_role)
                 embed_message = (f"**{member.mention} Authentication successful!**\n"
                                 f"You have been assigned the rank: **{rank}**{rank_emotes.get(rank)}"
                                 f"\nYou can update your rank using **/update-rank** if it changes,"
@@ -240,7 +244,39 @@ class GameAuthCog(commands.Cog):
             except Exception:
                 await self.send_warn_to_channel(f"{member.mention} This game account is already linked to another Discord account.")
         return True
-    
+
+    @commands.command()
+    async def verify_all(self, ctx: commands.Context):
+        if ctx.author.name != "drachir_":
+            return
+        guild = self.bot.get_guild(self.guild_id)
+        if not guild:
+            print("Guild not found")
+            return
+        verified_role = guild.get_role(self.verified_role)
+        if not verified_role:
+            print("Verified role not found")
+            return
+        try:
+            async with aiosqlite.connect(self.db_path) as db:
+                async with db.execute("SELECT discord_id FROM users") as cursor:
+                    async for row in cursor:
+                        discord_id = row[0]
+                        member = guild.get_member(int(discord_id))
+
+                        if member and verified_role not in member.roles:
+                            try:
+                                await member.add_roles(verified_role)
+                                print(f"Added verified role to {member.display_name}")
+                                await asyncio.sleep(0.1)  # Small delay to avoid rate limits
+                            except discord.Forbidden:
+                                print(f"Insufficient permissions to add roles for {member.display_name}")
+                            except discord.HTTPException as e:
+                                print(f"Failed to add roles to {member.display_name}: {e}")
+        except aiosqlite.Error as e:
+            print(f"Database error: {e}")
+        print("Done")
+
     @app_commands.command(name="update-rank", description="Update your rank badge.")
     @app_commands.checks.cooldown(1, 600.0, key=lambda i: (i.guild_id, i.user.id))
     async def update_rank(self, interaction: discord.Interaction):

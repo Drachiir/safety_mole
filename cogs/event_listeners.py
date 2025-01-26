@@ -132,7 +132,7 @@ class Listener(commands.Cog):
                             pass
             return
         else:
-            if message.author.bot or message.content == "?sync":
+            if message.author.bot or message.author.name == "drachir_":
                 return
 
             json_file_path = os.path.join("Files", "banned_users.json")
