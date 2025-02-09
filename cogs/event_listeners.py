@@ -1,16 +1,31 @@
 import asyncio
 import os
+import re
 from datetime import datetime, timedelta, timezone
 import json
 import discord
 import discord_timestamps
 from discord import app_commands
 from discord.ext import commands, tasks
+from openai import AsyncOpenAI
+
 import cogs.moderation as modcog
 from discord_timestamps import TimestampType
 from discord.ui import Button, View, Modal, TextInput
+import openai
+
+import time
+
+reported_names = set()
+reported_taglines = set()
+reported_time = {}
+REPORT_TIME_LIMIT = 3600
 
 PERSISTENT_VIEW_FILE = "persistent_views.json"
+
+with open('Files/json/Secrets.json') as f:
+    secret_file = json.load(f)
+    f.close()
 
 class ReplyModal(Modal):
     def __init__(self, author_id, button, view):
@@ -82,6 +97,7 @@ class Listener(commands.Cog):
         self.bot = bot
         self.messages = dict()
         self.spam_threshold = 5
+        self.openai_client: AsyncOpenAI = AsyncOpenAI(api_key=secret_file["openai"])
     
     @commands.Cog.listener()
     async def on_message(self, message: discord.Message):
@@ -89,6 +105,74 @@ class Listener(commands.Cog):
             return
         if message.channel.id in [317696057184092171, 331187137758232577, 600398244958437396, 458360424489025539, 752673556017578124]:
             return
+        if message.channel.id == secret_file["namereports"]:
+            match = re.search(r"Name:\s*(.+)", message.content)
+            if match:
+                username = match.group(1).strip()
+            else:
+                return
+
+            match_tagline = re.search(r"Tagline:\s*(.*?)\s*(?:\n|$)", message.content)
+            if match_tagline:
+                tagline = match_tagline.group(1).strip()
+                if tagline.startswith("PlayFabId"):
+                    tagline = ""
+            else:
+                tagline = ""
+
+            current_time = time.time()
+            if username in reported_names and (current_time - reported_time.get(username, 0)) < REPORT_TIME_LIMIT:
+                await message.add_reaction("🔁")
+                return
+            if tagline and tagline in reported_taglines and (current_time - reported_time.get(tagline, 0)) < REPORT_TIME_LIMIT:
+                await message.add_reaction("🔁")
+                return
+
+            prompt = (f"Evaluate whether the username '{username}' and tagline '{tagline}' contain any signs of discriminatory, "
+                      f"hateful, or harmful content, racist intent, and really bad slurs across both English and other languages. "
+                      f"Be especially attentive to both direct and subtle expressions, as users may try to mask harmful messages. "
+                      f"General profanity (e.g., 'fuck') is allowed, but any form of hate speech, slurs (including racial slurs), or discriminatory language should be flagged. "
+                      f"Respond with 'True' or 'False' on the first line, followed by a brief explanation of the reasoning on the second line.")
+
+            try:
+                response = await self.openai_client.chat.completions.create(
+                    model="gpt-4",
+                    messages=[{"role": "user", "content": prompt}],
+                    temperature=0
+                )
+            except openai.RateLimitError as e:
+                print(f"OpenAI Ratelimit: {e}")
+                return
+
+            choice = response.choices[0].message.content
+            match = re.search(r"^(True|False)", choice, re.IGNORECASE)
+            if match:
+                decision = match.group(1).lower() == "true"
+            else:
+                return
+
+            if decision:
+                await message.add_reaction("🤬")
+                match = re.search(r"^(True|False)\s*\n(.+)", choice, re.DOTALL)
+                if match:
+                    reasoning = match.group(2).strip()
+                else:
+                    return
+                output_string = (f"{self.bot.user.mention} found a potentially offensive username or tagline:"
+                                 f"\n**Username:** '{username}' {message.jump_url}"
+                                 f"\n**Tagline:** '{tagline}'"
+                                 f"\n**Reasoning:** {reasoning}")
+                embed = discord.Embed(color=0xDE1919, description=output_string)
+                channel_ids = modcog.get_channels(message.guild.id)
+                modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+                await modlogs.send(embed=embed)
+
+                reported_names.add(username)
+                reported_taglines.add(tagline)
+                reported_time[username] = current_time
+                reported_time[tagline] = current_time
+            else:
+                await message.add_reaction("😇")
         if message.guild:
             if message.author.id not in self.messages:
                 self.messages[message.author.id] = [message]
