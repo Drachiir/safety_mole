@@ -128,11 +128,12 @@ class Listener(commands.Cog):
                 await message.add_reaction("🔁")
                 return
 
-            prompt = (f"Evaluate whether the username '{username}' and tagline '{tagline}' contain any signs of discriminatory, "
-                      f"hateful, or harmful content, racist intent, and really bad slurs across both English and other languages. "
-                      f"Be especially attentive to both direct and subtle expressions, as users may try to mask harmful messages. "
-                      f"General profanity (e.g., 'fuck') is allowed, but any form of hate speech, slurs (including racial slurs), or discriminatory language should be flagged. "
-                      f"Respond with 'True' or 'False' on the first line, followed by a brief explanation of the reasoning on the second line.")
+            prompt = (f"Analyze the username '{username}' and tagline '{tagline}' for any indications of discriminatory, hateful, or harmful content, including racism, bigotry, or offensive slurs in English and other languages. "
+                      f"Be especially vigilant for subtle or disguised expressions of hate speech. "
+                      f"General profanity (e.g., 'fuck') is acceptable, but any form of hate speech, slurs (including racial slurs), or discriminatory language must be flagged. "
+                      f"Provide a response in the following format:\n"
+                      f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
+                      f"Second line: A concise explanation of the reasoning.")
 
             try:
                 response = await self.openai_client.chat.completions.create(
