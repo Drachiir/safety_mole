@@ -136,7 +136,7 @@ class Listener(commands.Cog):
 
             try:
                 response = await self.openai_client.chat.completions.create(
-                    model="gpt-4",
+                    model="gpt-4o",
                     messages=[{"role": "user", "content": prompt}],
                     temperature=0
                 )
@@ -159,8 +159,9 @@ class Listener(commands.Cog):
                 else:
                     return
                 output_string = (f"{self.bot.user.mention} found a potentially offensive username or tagline:"
-                                 f"\n**Username:** '{username}' {message.jump_url}"
+                                 f"\n**Username:** '{username}'"
                                  f"\n**Tagline:** '{tagline}'"
+                                 f"\n**Link:** {message.jump_url}"
                                  f"\n**Reasoning:** {reasoning}")
                 embed = discord.Embed(color=0xDE1919, description=output_string)
                 channel_ids = modcog.get_channels(message.guild.id)
