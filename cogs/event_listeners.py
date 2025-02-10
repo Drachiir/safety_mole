@@ -121,10 +121,10 @@ class Listener(commands.Cog):
             prompt = (f"Analyze the username '{username}' and tagline '{tagline}' for any indications of discriminatory, hateful, or harmful content, including racism, bigotry, or offensive slurs in English and other languages. "
                       f"Be especially vigilant for subtle or disguised expressions of hate speech. "
                       f"General profanity (e.g., 'fuck') is acceptable, but any form of hate speech, slurs (including racial slurs), or discriminatory language must be flagged."
-                      f"Also look out for player specific callouts in a negative way (e.g Fuck RandomGamer123, ) which are not allowed."
+                      f"Also look out for player specific callouts in a negative way, e.g Fuck Schakara, Sir3 sucks(Schakara and Sir3 being example playernames), which are not allowed."
                       f"Provide a response in the following format:\n"
                       f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
-                      f"Second line: A short, 1-2 sentence, explanation of the reasoning.")
+                      f"Second line: A short, 1-3 sentence, explanation of the reasoning.")
 
             try:
                 response = await self.openai_client.chat.completions.create(
