@@ -123,7 +123,7 @@ class Listener(commands.Cog):
                       f"General profanity (e.g., 'fuck') is acceptable, but any form of hate speech, slurs (including racial slurs), or discriminatory language must be flagged. "
                       f"Provide a response in the following format:\n"
                       f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
-                      f"Second line: A concise explanation of the reasoning.")
+                      f"Second line: A short explanation of the reasoning.")
 
             try:
                 response = await self.openai_client.chat.completions.create(
