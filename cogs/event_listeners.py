@@ -115,12 +115,9 @@ class Listener(commands.Cog):
 
             current_time = time.time()
             if username in reported_names and (current_time - reported_time.get(username, 0)) < REPORT_TIME_LIMIT:
-                await message.add_reaction("🔁")
-                return
-            if tagline and tagline in reported_taglines and (current_time - reported_time.get(tagline, 0)) < REPORT_TIME_LIMIT:
-                await message.add_reaction("🔁")
-                return
-
+                if tagline and tagline in reported_taglines and (current_time - reported_time.get(tagline, 0)) < REPORT_TIME_LIMIT:
+                    await message.add_reaction("🔁")
+                    return
             prompt = (f"Analyze the username '{username}' and tagline '{tagline}' for any indications of discriminatory, hateful, or harmful content, including racism, bigotry, or offensive slurs in English and other languages. "
                       f"Be especially vigilant for subtle or disguised expressions of hate speech. "
                       f"General profanity (e.g., 'fuck') is acceptable, but any form of hate speech, slurs (including racial slurs), or discriminatory language must be flagged. "
