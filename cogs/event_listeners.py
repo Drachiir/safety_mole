@@ -19,7 +19,7 @@ import time
 reported_names = set()
 reported_taglines = set()
 reported_time = {}
-REPORT_TIME_LIMIT = 3600
+REPORT_TIME_LIMIT = 6000
 
 PERSISTENT_VIEW_FILE = "persistent_views.json"
 
@@ -106,19 +106,12 @@ class Listener(commands.Cog):
         if message.channel.id in [317696057184092171, 331187137758232577, 600398244958437396, 458360424489025539, 752673556017578124]:
             return
         if message.channel.id == secret_file["namereports"]:
-            match = re.search(r"Name:\s*(.+)", message.content)
-            if match:
-                username = match.group(1).strip()
-            else:
+            lines = message.content.split("\n")
+            if len(lines) < 3:
                 return
-
-            match_tagline = re.search(r"Tagline:\s*(.*?)\s*(?:\n|$)", message.content)
-            if match_tagline:
-                tagline = match_tagline.group(1).strip()
-                if tagline.startswith("PlayFabId"):
-                    tagline = ""
-            else:
-                tagline = ""
+            username = lines[0].replace("Name:", "").strip()
+            tagline = lines[1].replace("Tagline:", "").strip()
+            playfab_id = lines[2].replace("PlayFabId:", "").strip()
 
             current_time = time.time()
             if username in reported_names and (current_time - reported_time.get(username, 0)) < REPORT_TIME_LIMIT:
@@ -146,24 +139,17 @@ class Listener(commands.Cog):
                 return
 
             choice = response.choices[0].message.content
-            match = re.search(r"^(True|False)", choice, re.IGNORECASE)
-            if match:
-                decision = match.group(1).lower() == "true"
-            else:
-                return
+            choice_lines = choice.split("\n")
+            decision = "true" in choice_lines[0].casefold()
 
             if decision:
                 await message.add_reaction("🤬")
-                match = re.search(r"^(True|False)\s*\n(.+)", choice, re.DOTALL)
-                if match:
-                    reasoning = match.group(2).strip()
-                else:
-                    return
                 output_string = (f"{self.bot.user.mention} found a potentially offensive username or tagline:"
                                  f"\n**Username:** '{username}'"
                                  f"\n**Tagline:** '{tagline}'"
+                                 f"\n**Kraken:** https://kraken.legiontd2.com/playerid/{playfab_id}"
                                  f"\n**Link:** {message.jump_url}"
-                                 f"\n**Reasoning:** {reasoning}")
+                                 f"\n**Reasoning:** {choice_lines[1]}")
                 embed = discord.Embed(color=0xDE1919, description=output_string)
                 channel_ids = modcog.get_channels(message.guild.id)
                 modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
