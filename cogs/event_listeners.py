@@ -124,7 +124,7 @@ class Listener(commands.Cog):
                       f"Also look out for player specific callouts in a negative way, e.g Fuck Schakara, Sir3 sucks(Schakara and Sir3 being example playernames), which are not allowed."
                       f"Provide a response in the following format:\n"
                       f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
-                      f"Second line: A short, 1-3 sentence, explanation of the reasoning.")
+                      f"Second line: A short, 30 words max, explanation of the reasoning.")
 
             try:
                 response = await self.openai_client.chat.completions.create(
