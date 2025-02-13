@@ -118,13 +118,13 @@ class Listener(commands.Cog):
                 if tagline and tagline in reported_taglines and (current_time - reported_time.get(tagline, 0)) < REPORT_TIME_LIMIT:
                     await message.add_reaction("🔁")
                     return
-            prompt = (f"Analyze the username '{username}' and tagline '{tagline}' for any indications of discriminatory, hateful, or harmful content, including racism, bigotry, or offensive slurs in English and other languages. "
-                      f"Be especially vigilant for subtle or disguised expressions of hate speech. "
-                      f"General profanity (e.g., 'fuck') is acceptable, but any form of hate speech, slurs (including racial slurs), or discriminatory language must be flagged."
+            prompt = (f"Analyze the username '{username}' and tagline '{tagline}' and determine if either contains discriminatory or hateful content, including racism, bigotry, or offensive slurs in English and other languages."
+                      f"Be especially vigilant for disguised expressions of hate speech etc."
+                      f"General profanity (e.g., 'fuck', 'shit') is acceptable."
                       f"Also look out for player specific callouts in a negative way, e.g Fuck Schakara, Sir3 sucks(Schakara and Sir3 being example playernames), which are not allowed."
                       f"Provide a response in the following format:\n"
                       f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
-                      f"Second line: A short, 30 words max, explanation of the reasoning.")
+                      f"Second line: A short, 28 words max, explanation of the reasoning.")
 
             try:
                 response = await self.openai_client.chat.completions.create(
