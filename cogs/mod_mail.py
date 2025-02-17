@@ -97,20 +97,26 @@ class ModMail(commands.Cog):
                 thread = await guild.fetch_channel(existing_thread_id)
                 if thread and "done" in [tag.name.lower() for tag in thread.applied_tags]:
                     thread = None  # Create a new one if the old one is marked as done
-
-            if not thread:
-                await message.channel.send("✅ Your message has been sent to the Support team\n⚠️ Please make sure to have DMs enabled to receive a response.")
-                thread = await forum_channel.create_thread(name=f"Support Request - {message.author.display_name} / {message.author.name}",
-                                                           auto_archive_duration=1440, content=f"Support Request - {message.author.display_name} / {message.author.name} / {message.author.id}\n"
-                                                                                               f"Replies to this thread will be relayed to the user.")
-                await save_thread_id(message.author.id, thread.thread.id)
-                await send_webhook_message(forum_channel, thread.thread, message.author, message.content)
-                if files:
-                    await thread.thread.send(files=files)
-            else:
-                await send_webhook_message(forum_channel, thread, message.author, message.content)
-                if files:
-                    await thread.send(files=files)
+            try:
+                if not thread:
+                    await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
+                                               "\n⚠️ Please make sure to have DMs enabled to receive a response."
+                                               "\n📃 Responses will appear here:")
+                    thread = await forum_channel.create_thread(name=f"Support Request - {message.author.display_name} / {message.author.name}",
+                                                               auto_archive_duration=1440, content=f"Support Request - {message.author.display_name} / {message.author.name} / {message.author.id}\n"
+                                                                                                   f"Replies to this thread will be relayed to the user. Marked with ✅ if successful.")
+                    await save_thread_id(message.author.id, thread.thread.id)
+                    await send_webhook_message(forum_channel, thread.thread, message.author, message.content)
+                    if files:
+                        await thread.thread.send(files=files)
+                else:
+                    await send_webhook_message(forum_channel, thread, message.author, message.content)
+                    if files:
+                        await thread.send(files=files)
+                await message.add_reaction("✅")
+            except Exception:
+                await message.add_reaction("❌")
+                await message.author.send("Something went wrong sending this message, please try again.")
 
         elif isinstance(message.channel, discord.Thread):
             # This is a message inside a thread in the forum
