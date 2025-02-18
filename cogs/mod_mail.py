@@ -63,6 +63,7 @@ async def save_thread_id(user_id, thread_id):
 class ModMail(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
+        self.db_path = "/user_data.db"
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -106,6 +107,14 @@ class ModMail(commands.Cog):
                                                                auto_archive_duration=1440, content=f"Support Request - {message.author.display_name} / {message.author.name} / {message.author.id}\n"
                                                                                                    f"Replies to this thread will be relayed to the user. Marked with ✅ if successful.")
                     await save_thread_id(message.author.id, thread.thread.id)
+                    # GET GAME ACCOUNT IF LINKED
+                    async with aiosqlite.connect(self.db_path) as db:
+                        async with db.execute("SELECT player_id, ingame_name FROM users WHERE discord_id = ?", (str(message.author.id),)) as cursor:
+                            result = await cursor.fetchone()
+                    if result:
+                        await thread.thread.send(f"**Game Account Name**: {result[1]}\n"
+                                                 f"**Kraken:** https://kraken.legiontd2.com/playerid/{result[0]}")
+                    # SEND WEBHOOK USING USER AVATAR AND NAME
                     await send_webhook_message(forum_channel, thread.thread, message.author, message.content)
                     if files:
                         await thread.thread.send(files=files)
