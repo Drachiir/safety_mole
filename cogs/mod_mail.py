@@ -1,6 +1,9 @@
 import asyncio
 import os
 import json
+import pathlib
+import traceback
+
 import aiosqlite
 import discord
 from discord.ext import commands
@@ -63,7 +66,7 @@ async def save_thread_id(user_id, thread_id):
 class ModMail(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
-        self.db_path = "/user_data.db"
+        self.db_path = str(pathlib.Path(__file__).parent.parent.resolve()) + "/user_data.db"
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -124,6 +127,7 @@ class ModMail(commands.Cog):
                         await thread.send(files=files)
                 await message.add_reaction("✅")
             except Exception:
+                traceback.print_exc()
                 await message.add_reaction("❌")
                 await message.author.send("Something went wrong sending this message, please try again.")
 
@@ -141,6 +145,7 @@ class ModMail(commands.Cog):
                                 await user.send(f"{message.content}", files=files)
                                 await message.add_reaction("✅")
                             except Exception:
+                                traceback.print_exc()
                                 await message.channel.send("It seems that the user has DM's disabled...")
                                 await message.add_reaction("❌")
                                 pass
