@@ -128,7 +128,8 @@ class ModMail(commands.Cog):
                         user = await self.bot.fetch_user(user_id)
                         if user:
                             try:
-                                await user.send(f"{message.content}")
+                                files = [await att.to_file() for att in message.attachments]
+                                await user.send(f"{message.content}", files=files)
                                 await message.add_reaction("✅")
                             except Exception:
                                 await message.channel.send("It seems that the user has DM's disabled...")
