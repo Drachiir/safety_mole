@@ -105,7 +105,7 @@ class ModMail(commands.Cog):
                 if not thread:
                     await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
                                                "\n⚠️ Please make sure to have DMs enabled to receive a response."
-                                               "\n📃 Responses will appear here:")
+                                               "\n📃 Responses will appear here, you can add additional messages:")
                     thread = await forum_channel.create_thread(name=f"Support Request - {message.author.display_name} / {message.author.name}",
                                                                auto_archive_duration=1440, content=f"Support Request - {message.author.display_name} / {message.author.name} / {message.author.id}\n"
                                                                                                    f"Replies to this thread will be relayed to the user. Marked with ✅ if successful.")
