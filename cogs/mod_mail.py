@@ -98,7 +98,10 @@ class ModMail(commands.Cog):
             files = [await att.to_file() for att in message.attachments]
 
             if existing_thread_id:
-                thread = await guild.fetch_channel(existing_thread_id)
+                try:
+                    thread = await guild.fetch_channel(existing_thread_id)
+                except Exception:
+                    pass
                 if thread and "done" in [tag.name.lower() for tag in thread.applied_tags]:
                     thread = None  # Create a new one if the old one is marked as done
             try:
