@@ -52,7 +52,7 @@ class Listener(commands.Cog):
                     return
             prompt = (f"Analyze the username '{username}' and tagline '{tagline}' and determine if either contains discriminatory or hateful content, including racism, bigotry, or offensive slurs in English and other languages."
                       f"Be especially vigilant for disguised expressions of hate speech etc."
-                      f"General profanity (e.g., 'fuck', 'shit') is acceptable."
+                      f"General profanity (e.g., 'fuck', 'shit') and sexual themes are acceptable."
                       f"Also look out for player specific callouts in a negative way, e.g Fuck Schakara, Sir3 sucks(Schakara and Sir3 being example playernames), which are not allowed."
                       f"Provide a response in the following format:\n"
                       f"First line: 'True' (if flagged) or 'False' (if not flagged)\n"
