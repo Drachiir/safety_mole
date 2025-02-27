@@ -184,7 +184,36 @@ class ContextMenu(commands.Cog):
         except Exception:
             await interaction.followup.send(f"Cannot kick {user.mention}.", ephemeral=True)
             return
+        deleted_messages_log = []
+        if reason.lower() in ["spam", "scam"]:
+            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            for channel in interaction.guild.text_channels:
+                if channel.category:
+                    excluded_keywords = [
+                        "staff", "moderation", "info", "new players",
+                        "community helper", "tournament casters",
+                        "debug", "other", "archived", "voice"
+                    ]
+                    if any(keyword in channel.category.name.lower() for keyword in excluded_keywords):
+                        continue
+                try:
+                    async for message in channel.history(limit=100, after=one_hour_ago):
+                        if message.author == user:
+                            deleted_messages_log.append(f"[{message.created_at.strftime('%Y-%m-%d %H:%M:%S')}] {message.content}")
+                            await message.delete()
+                except discord.Forbidden:
+                    continue
+                except discord.HTTPException:
+                    pass
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
+        if deleted_messages_log:
+            deleted_messages_text = "\n".join(deleted_messages_log)
+            messages_embed = discord.Embed(
+                color=0xFF4500,
+                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                description=deleted_messages_text[:4096]
+            )
+            await modlogs.send(embed=messages_embed)
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked {reason}")
         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
