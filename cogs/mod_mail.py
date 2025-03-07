@@ -102,8 +102,8 @@ class ModMail(commands.Cog):
                     thread = await guild.fetch_channel(existing_thread_id)
                 except Exception:
                     pass
-                if thread and "done" in [tag.name.lower() for tag in thread.applied_tags]:
-                    thread = None  # Create a new one if the old one is marked as done
+                if thread.locked or thread.archived:
+                    thread = None
             try:
                 if not thread:
                     await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
