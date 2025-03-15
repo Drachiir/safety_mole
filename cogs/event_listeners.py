@@ -125,7 +125,7 @@ class Listener(commands.Cog):
                         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
                         await modlogs.send(embed=embed)
                         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for spam-bot like behavior. Duration: 7 Days\n"
-                                                                     f"If your account was compromised, you may appeal your mute at https://legiontd2.com/bans")
+                                                                     f"If your account was compromised, you can appeal your mute by writing a message here.")
                         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                         del self.messages[message.author.id]
                         try:
