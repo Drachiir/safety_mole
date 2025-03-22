@@ -345,29 +345,51 @@ class Moderation(commands.Cog):
             f.close()
         await interaction.followup.send(f"Setup done.", ephemeral=True)
 
-    @app_commands.command(name="modmail-ban", description="Ban someone from using the Mod Mail feature")
+    @app_commands.command(name="support-ban", description="Ban someone from creating Support Requests")
     @app_commands.guild_only()
     @app_commands.default_permissions(ban_members=True)
-    async def modmail_ban(self, interaction: discord.Interaction, user: discord.User):
+    async def support_ban(self, interaction: discord.Interaction, user: discord.User, days: int):
+        """
+        Bans a user from Mod Mail with a specified duration in days.
+        """
         await interaction.response.defer(thinking=True, ephemeral=True)
         os.makedirs("Files", exist_ok=True)
         json_file_path = os.path.join("Files", "banned_users.json")
+
         if os.path.exists(json_file_path):
             with open(json_file_path, "r") as file:
                 banned_users = json.load(file)
         else:
             banned_users = {}
 
-        banned_users[str(user.id)] = {"username": str(user), "banned_by": str(interaction.user)}
+        ban_time = datetime.now(timezone.utc)
+        unban_time = ban_time + timedelta(days=days)
+
+        banned_users[str(user.id)] = {
+            "username": str(user.name),
+            "banned_by": str(interaction.user),
+            "ban_time": ban_time.isoformat(),
+            "duration_days": days,
+            "unban_time": unban_time.isoformat()
+        }
+
         with open(json_file_path, "w") as file:
             json.dump(banned_users, file, indent=4)
 
-        embed = discord.Embed(color=0xDE1919, description=f"**{interaction.user.mention}** banned **{user.mention}** from Mod Mail"
-                                                          f"\n**User id:** {user.id}")
+        embed = discord.Embed(
+            color=0xDE1919,
+            description=(
+                f"**{interaction.user.mention}** banned **{user.display_name}** from creating Support Requests"
+                f"\n**User ID:** {user.id}"
+                f"\n**Ban Duration:** {days} days"
+                f"\n**Unban Time:** {unban_time.strftime('%Y-%m-%d %H:%M:%S UTC')}"
+            )
+        )
+
         channel_ids = get_channels(interaction.guild.id)
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
-        await interaction.followup.send(f"User banned from Mod Mail.", ephemeral=True)
+        await interaction.followup.send(f"User banned from Mod Mail for {days} days.", ephemeral=True)
     
     @app_commands.command(name="chat-search", description="Search a chat for specific messages")
     @app_commands.guild_only()

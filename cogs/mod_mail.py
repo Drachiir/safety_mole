@@ -3,7 +3,7 @@ import os
 import json
 import pathlib
 import traceback
-
+from datetime import datetime, timedelta, timezone
 import aiosqlite
 import discord
 from discord.ext import commands
@@ -81,14 +81,24 @@ class ModMail(commands.Cog):
             return
 
         if message.guild is None:
-            # This is a DM message from a user
+            # This is a DM message from a user, check if banned
             json_file_path = os.path.join("Files", "banned_users.json")
             if os.path.exists(json_file_path):
                 with open(json_file_path, "r") as file:
                     banned_users = json.load(file)
-                if str(message.author.id) in banned_users:
-                    await message.channel.send("You are banned from using Support requests ❌")
-                    return
+                user_id = str(message.author.id)
+                if user_id in banned_users:
+                    unban_time = datetime.fromisoformat(banned_users[user_id]["unban_time"])
+                    now = datetime.now(timezone.utc)
+
+                    if now >= unban_time:
+                        # Ban expired, remove user from the JSON
+                        del banned_users[user_id]
+                        with open(json_file_path, "w") as file:
+                            json.dump(banned_users, file, indent=4)
+                    else:
+                        await message.channel.send("You are banned from using Support requests ❌")
+                        return
 
             guild = self.bot.get_guild(self.bot.guild_id)
             channel_ids = modcog.get_channels(self.bot.guild_id)
