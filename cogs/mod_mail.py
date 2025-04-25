@@ -146,7 +146,7 @@ class ModMail(commands.Cog):
 
         elif isinstance(message.channel, discord.Thread):
             # This is a message inside a thread in the forum
-            if message.content.startswith("?"):
+            if message.content.startswith("?") or message.content.startswith("!"):
                 return
             async with aiosqlite.connect(DB_PATH) as db:
                 async with db.execute("SELECT user_id FROM modmail_threads WHERE thread_id = ?", (str(message.channel.id),)) as cursor:
