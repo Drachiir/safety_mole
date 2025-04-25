@@ -422,7 +422,7 @@ class GameAuthCog(commands.Cog):
                     continue
                 try:
                     new_rank = get_rank_name(stats["overallElo"])
-                except KeyError:
+                except Exception:
                     continue
                     
                 if current_rank == new_rank:
