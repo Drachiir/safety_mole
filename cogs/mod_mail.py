@@ -110,9 +110,11 @@ class ModMail(commands.Cog):
             if existing_thread_id:
                 try:
                     thread = await guild.fetch_channel(existing_thread_id)
+                    if not thread:
+                        thread = None
+                    elif thread.locked or thread.archived:
+                        thread = None
                 except Exception:
-                    pass
-                if thread.locked or thread.archived:
                     thread = None
             try:
                 if not thread:
