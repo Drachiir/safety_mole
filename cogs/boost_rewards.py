@@ -45,6 +45,8 @@ class BoostRewardsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
+        if before.display_name.casefold() != "dani":
+            return
         if not before.premium_since and after.premium_since:
             code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
             boost_start = after.premium_since.isoformat()
@@ -103,6 +105,8 @@ class BoostRewardsCog(commands.Cog):
             #     if not member:
             #         continue  # skip if user not in guild
             for member in guild.premium_subscribers:
+                if member.display_name.casefold() != "dani":
+                    return
                 discord_id = str(member.id)
 
                 async with db.execute("""
