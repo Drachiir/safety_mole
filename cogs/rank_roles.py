@@ -83,9 +83,13 @@ class GameAuthCog(commands.Cog):
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
+        self.bot.loop.create_task(self.create_boost_table())
         self.scheduled_rank_update.start()
         self.web_app = web.Application()
-        self.web_app.add_routes([web.get('/ltd2', self.verify_endpoint)])
+        self.web_app.add_routes([
+            web.get('/ltd2', self.verify_endpoint),
+            web.get('/verify-boost', self.verify_boost_endpoint)
+        ])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
     
@@ -120,7 +124,25 @@ class GameAuthCog(commands.Cog):
                         await self.send_warn_to_channel(f"{auth_data["user"].mention} authentication failed. Please try again later.")
                     return web.json_response({"status": "error"}, status=500)
         return web.json_response({"status": "invalid"}, status=400)
-        
+
+    async def verify_boost_endpoint(self, request):
+        code = request.query.get("code")
+
+        if not code:
+            return web.json_response({"status": "invalid request"}, status=400)
+
+        async with aiosqlite.connect(self.db_path) as db:
+            async with db.execute("SELECT discord_id FROM boost_codes WHERE code = ?", (code,)) as cursor:
+                result = await cursor.fetchone()
+
+            if result:
+                # Invalidate the code, but retain the boost history
+                await db.execute("UPDATE boost_codes SET code = NULL WHERE code = ?", (code,))
+                await db.commit()
+                return web.json_response({"status": "valid"})
+
+        return web.json_response({"status": "invalid"}, status=400)
+
     async def create_db(self):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
@@ -133,7 +155,19 @@ class GameAuthCog(commands.Cog):
                 )
             """)
             await db.commit()
-    
+
+    async def create_boost_table(self):
+        async with aiosqlite.connect(self.db_path) as db:
+            await db.execute("""
+                CREATE TABLE IF NOT EXISTS boost_codes (
+                    discord_id TEXT PRIMARY KEY,
+                    code TEXT,
+                    boost_start TEXT,
+                    last_reward_month TEXT
+                )
+            """)
+            await db.commit()
+
     async def cog_unload(self):
         await self.runner.cleanup()
         await self.session.close()
