@@ -89,7 +89,7 @@ class BoostRewardsCog(commands.Cog):
 
     @tasks.loop(hours=24)
     async def check_monthly_boosts(self):
-        guild = await self.bot.fetch_guild(GUILD_ID)
+        guild = self.bot.get_guild(GUILD_ID)
         if not guild:
             return
 
