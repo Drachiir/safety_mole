@@ -106,7 +106,7 @@ class BoostRewardsCog(commands.Cog):
             #         continue  # skip if user not in guild
             for member in guild.premium_subscribers:
                 if member.display_name.casefold() != "dani":
-                    return
+                    continue
                 discord_id = str(member.id)
 
                 async with db.execute("""
