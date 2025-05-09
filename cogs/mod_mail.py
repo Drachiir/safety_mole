@@ -39,6 +39,28 @@ async def send_webhook_message(forum_channel: discord.ForumChannel, thread: disc
                 error_text = await response.text()
                 print(f"⚠️ Webhook Error: {response.status} - {error_text}")
 
+class ConfirmSupportView(discord.ui.View):
+    def __init__(self, author: discord.User, timeout=180):
+        super().__init__(timeout=timeout)
+        self.author = author
+        self.message = None  # Ensure attribute always exists
+        self.confirmed = asyncio.Event()
+
+    @discord.ui.button(label="Contact Support", style=discord.ButtonStyle.green, custom_id="confirm_support")
+    async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
+        if interaction.user.id != self.author.id:
+            await interaction.response.send_message("This isn't your confirmation button!", ephemeral=True)
+            return
+
+        if self.message:
+            try:
+                await self.message.delete()
+            except discord.HTTPException:
+                pass
+
+        self.confirmed.set()
+        self.stop()
+
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
         await db.execute("""
@@ -67,6 +89,7 @@ class ModMail(commands.Cog):
     def __init__(self, bot: commands.Bot):
         self.bot = bot
         self.db_path = str(pathlib.Path(__file__).parent.parent.resolve()) + "/user_data.db"
+        self.pending_confirmations = set()  # Track users mid-confirmation
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -100,6 +123,9 @@ class ModMail(commands.Cog):
                         await message.channel.send("You are banned from using Support requests ❌")
                         return
 
+            if message.author.id in self.pending_confirmations:
+                return
+
             guild = self.bot.get_guild(self.bot.guild_id)
             channel_ids = modcog.get_channels(self.bot.guild_id)
             forum_channel: discord.ForumChannel = self.bot.get_channel(channel_ids["mod_mail"])
@@ -118,8 +144,23 @@ class ModMail(commands.Cog):
                     thread = None
             try:
                 if not thread:
+                    self.pending_confirmations.add(message.author.id)
+                    view = ConfirmSupportView(message.author)
+                    confirm_message = await message.channel.send(
+                        "👋 Hello! Please confirm you wish to contact the Support team by clicking the button below:",
+                        view=view
+                    )
+                    view.message = confirm_message  # Assign after send
+                    try:
+                        await view.confirmed.wait()
+                    except asyncio.TimeoutError:
+                        await message.channel.send("⏰ You didn't confirm in time. Please try again if you still need help.")
+                    finally:
+                        self.pending_confirmations.discard(message.author.id)
+
                     await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
                                                "\n⚠️ Please make sure to have DMs enabled to receive a response."
+                                               "\n📨 Messages are marked with ✅ if they were sent to the support team."
                                                "\n📃 Responses will appear here, you can add additional messages:")
                     thread = await forum_channel.create_thread(name=f"Support Request - {message.author.display_name} / {message.author.name}",
                                                                auto_archive_duration=1440, content=f"Support Request - {message.author.display_name} / {message.author.name} / {message.author.id}\n"

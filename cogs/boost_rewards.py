@@ -137,7 +137,6 @@ class BoostRewardsCog(commands.Cog):
                             f"Enter this in the LegionTD2 Global Chat to claim a reward! `/redeem {new_code}`\n"
                             f"-# The code expires in a month."
                         )
-                        print(f"{member.display_name} boosted the ltd2 server!")
                     except discord.HTTPException:
                         try:
                             channel_ids = await get_channels(GUILD_ID)
