@@ -59,6 +59,8 @@ class BoostRewardsCog(commands.Cog):
                 """, (str(after.id), code, boost_start, current_month))
                 await db.commit()
 
+            print(f"{after.display_name} boosted the server!")
+
             try:
                 await after.send(
                     f"Thanks for boosting our server ❤️\n"
@@ -105,6 +107,7 @@ class BoostRewardsCog(commands.Cog):
             #     if not member:
             #         continue  # skip if user not in guild
             for member in guild.premium_subscribers:
+                print(member.display_name)
                 if member.display_name.casefold() != "dani":
                     continue
                 discord_id = str(member.id)
@@ -125,6 +128,8 @@ class BoostRewardsCog(commands.Cog):
                         VALUES (?, ?, ?, ?)
                     """, (discord_id, new_code, boost_start, new_reward_month))
                     await db.commit()
+
+                    print(f"{member.display_name} boosted the server!")
 
                     try:
                         await member.send(
@@ -169,6 +174,8 @@ class BoostRewardsCog(commands.Cog):
                 if give_reward:
                     new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
                     new_reward_month = now.strftime("%Y-%m")
+
+                    print(f"{member.display_name} boosted the server!")
 
                     await db.execute("""
                         UPDATE boost_codes
