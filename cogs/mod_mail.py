@@ -40,11 +40,12 @@ async def send_webhook_message(forum_channel: discord.ForumChannel, thread: disc
                 print(f"⚠️ Webhook Error: {response.status} - {error_text}")
 
 class ConfirmSupportView(discord.ui.View):
-    def __init__(self, author: discord.User, timeout=180):
+    def __init__(self, author: discord.User, on_timeout_callback=None, timeout=180):
         super().__init__(timeout=timeout)
         self.author = author
         self.message = None  # Ensure attribute always exists
         self.confirmed = asyncio.Event()
+        self.on_timeout_callback = on_timeout_callback  # Cleanup handler
 
     @discord.ui.button(label="Contact Support", style=discord.ButtonStyle.green, custom_id="confirm_support")
     async def confirm_button(self, interaction: discord.Interaction, button: discord.ui.Button):
@@ -60,6 +61,17 @@ class ConfirmSupportView(discord.ui.View):
 
         self.confirmed.set()
         self.stop()
+
+    async def on_timeout(self):
+        # Called when the view times out
+        try:
+            if self.message:
+                await self.message.edit(content="⏰ Confirmation timed out. Please send a new message to try again.", view=None)
+        except Exception:
+            pass
+
+        if self.on_timeout_callback:
+            await self.on_timeout_callback(self.author.id)
 
 async def init_db():
     async with aiosqlite.connect(DB_PATH) as db:
@@ -90,6 +102,9 @@ class ModMail(commands.Cog):
         self.bot = bot
         self.db_path = str(pathlib.Path(__file__).parent.parent.resolve()) + "/user_data.db"
         self.pending_confirmations = set()  # Track users mid-confirmation
+
+    async def cleanup_confirmation(self, user_id):
+        self.pending_confirmations.discard(user_id)
 
     @commands.Cog.listener()
     async def on_ready(self):
@@ -145,7 +160,10 @@ class ModMail(commands.Cog):
             try:
                 if not thread:
                     self.pending_confirmations.add(message.author.id)
-                    view = ConfirmSupportView(message.author)
+                    view = ConfirmSupportView(
+                        author=message.author,
+                        on_timeout_callback=self.cleanup_confirmation
+                    )
                     confirm_message = await message.channel.send(
                         "👋 Hello! Please confirm you wish to contact the Support team by clicking the button below:",
                         view=view
