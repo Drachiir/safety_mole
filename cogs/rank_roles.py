@@ -88,7 +88,8 @@ class GameAuthCog(commands.Cog):
         self.web_app = web.Application()
         self.web_app.add_routes([
             web.get('/ltd2', self.verify_endpoint),
-            web.get('/verify-boost', self.verify_boost_endpoint)
+            web.get('/verify-boost', self.verify_boost_endpoint),
+            web.get('/player_id', self.player_id_endpoint)
         ])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
@@ -142,6 +143,21 @@ class GameAuthCog(commands.Cog):
                 return web.json_response({"status": "valid"})
 
         return web.json_response({"status": "invalid"}, status=400)
+
+    async def player_id_endpoint(self, request):
+        # Get the discord_id from the query string
+        discord_id = request.query.get("discord_id")
+        if not discord_id:
+            return web.json_response({"error": "Missing discord_id"}, status=400)
+
+        async with aiosqlite.connect(self.db_path) as db:
+            cursor = await db.execute("SELECT player_id FROM users WHERE discord_id = ?", (discord_id,))
+            row = await cursor.fetchone()
+
+            if row:
+                return web.json_response({"player_id": row[0]})
+            else:
+                return web.json_response({"error": "User not found"}, status=404)
 
     async def create_db(self):
         async with aiosqlite.connect(self.db_path) as db:
