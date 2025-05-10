@@ -89,7 +89,7 @@ class GameAuthCog(commands.Cog):
         self.web_app.add_routes([
             web.get('/ltd2', self.verify_endpoint),
             web.get('/verify-boost', self.verify_boost_endpoint),
-            web.get('/player_id', self.player_id_endpoint)
+            web.get('/player-id', self.player_id_endpoint)
         ])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
