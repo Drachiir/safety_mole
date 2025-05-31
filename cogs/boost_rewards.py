@@ -173,7 +173,7 @@ class BoostRewardsCog(commands.Cog):
                     new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
                     new_reward_month = now.strftime("%Y-%m")
 
-                    print(f"{member.display_name} boosted the server!")
+                    print(f"{member.display_name} continued boosting the server!")
 
                     await db.execute("""
                         UPDATE boost_codes
@@ -226,6 +226,7 @@ class BoostRewardsCog(commands.Cog):
         # Create fake before and after objects
         before = SimpleNamespace(
             id=member.id,
+            display_name="",
             premium_since=None,
             mention=member.mention,
             send=lambda msg: ctx.send(f"(Simulated DM to {member.display_name}): {msg}")
@@ -233,6 +234,7 @@ class BoostRewardsCog(commands.Cog):
 
         after = SimpleNamespace(
             id=member.id,
+            display_name="",
             premium_since=now - timedelta(days=1),
             mention=member.mention,
             send=lambda msg: ctx.send(f"(Simulated DM to {member.display_name}): {msg}")
