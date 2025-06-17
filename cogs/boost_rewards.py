@@ -67,8 +67,8 @@ class BoostRewardsCog(commands.Cog):
                     f"Enter this in the LegionTD2 Global Chat to claim a reward! `/redeem {code}`\n"
                     f"-# The code expires in a month."
                 )
-            except discord.HTTPException:
-                channel_ids = get_channels(GUILD_ID)
+            except Exception:
+                channel_ids = await get_channels(GUILD_ID)
                 botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
                 if botmsgs:
                     await botmsgs.send(
