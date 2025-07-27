@@ -154,6 +154,8 @@ class Listener(commands.Cog):
             else:
                 await thread.send(f"Thanks for submitting a bug-report {thread.owner.mention}\n"
                                   f"Please make sure your post follows the guidelines, if you haven't already\nhttps://discord.com/channels/159363816570880012/1064534565386985513/1064534565386985513")
+            if "cursor" in message.content.lower():
+                await thread.send(f"⚠️ If your **Cursor** is not showing up In-Game, try to disable **Overwolf**, or similar Overlay apps ⚠️")
 
 async def setup(bot:commands.Bot):
     await bot.add_cog(Listener(bot))
