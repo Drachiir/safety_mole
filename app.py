@@ -30,7 +30,7 @@ class Legion(commands.Bot):
     
     async def on_ready(self):
         print(f'"{self.user.display_name}" is now running!')
-        game = discord.CustomActivity("DM for Support Requests")
+        game = discord.CustomActivity("~Boo daa doo~")
         await self.change_presence(activity=game)
 
 
