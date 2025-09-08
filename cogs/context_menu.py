@@ -412,7 +412,25 @@ class ContextMenu(commands.Cog):
                                 f"**Channel:** {self.target_message.channel.mention}\n",
                     color=discord.Color.red()
                 )
-                embed.add_field(name="Messages Deleted:", value="\n".join(f"- {msg.content}" for msg in deleted_messages) or "No message content available.", inline=False)
+
+                embed.add_field(
+                    name="Messages Deleted:",
+                    value="",
+                    inline=False
+                )
+                if deleted_messages:
+                    for msg in deleted_messages:
+                        embed.add_field(
+                            name="\u200b",  # invisible name so it's blank
+                            value=msg.content or "No message content available.",
+                            inline=False
+                        )
+                else:
+                    embed.add_field(
+                        name="\u200b",
+                        value="No message content available.",
+                        inline=False
+                    )
                 await modlogs.send(embed=embed)
 
     @app_commands.guild_only()
