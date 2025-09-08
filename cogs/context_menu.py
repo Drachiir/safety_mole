@@ -129,7 +129,7 @@ class ContextMenu(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been banned {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -159,7 +159,7 @@ class ContextMenu(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -216,7 +216,7 @@ class ContextMenu(commands.Cog):
             await modlogs.send(embed=messages_embed)
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -233,7 +233,7 @@ class ContextMenu(commands.Cog):
         reason = context_modal.answer.value
         embed = create_mod_log_embed(interaction.user, "privately warned", user, reason)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         channel_ids = modcog.get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -339,7 +339,7 @@ class ContextMenu(commands.Cog):
             )
             await modlogs.send(embed=messages_embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:

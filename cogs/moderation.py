@@ -48,7 +48,7 @@ class Moderation(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been banned for {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -80,7 +80,7 @@ class Moderation(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unbanned.")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -110,7 +110,7 @@ class Moderation(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked for {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -166,7 +166,7 @@ class Moderation(commands.Cog):
             await modlogs.send(embed=messages_embed)
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been kicked for {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
@@ -182,7 +182,7 @@ class Moderation(commands.Cog):
         await interaction.response.defer(thinking=True, ephemeral=True)
         embed = create_mod_log_embed(interaction.user, "privately warned", user, reason)
         embed2 = discord.Embed(color=0xDE1919, title=f"You have been warned: {reason}")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         channel_ids = get_channels(interaction.guild.id)
         if not channel_ids:
             await interaction.followup.send(f"Channel setup not done yet, use /setup.", ephemeral=True)
@@ -256,7 +256,7 @@ class Moderation(commands.Cog):
                 )
                 await modlogs.send(embed=messages_embed)
             embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for {reason}\nDuration: {duration}")
-            embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+            embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
             try:
                 await user.send(embed=embed2)
             except Exception:
@@ -285,7 +285,7 @@ class Moderation(commands.Cog):
         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
         await modlogs.send(embed=embed)
         embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unmuted.\n")
-        embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
+        embed2.set_author(name=f"{interaction.guild.name}", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
