@@ -35,6 +35,7 @@ GLOBAL_CHAT_CHANNEL_ID = config["GLOBAL_CHAT_CHANNEL_ID"]
 RANK_ROLES = {rank: int(role_id) for rank, role_id in config["RANK_ROLES"].items()}
 RANK_ROLES2 = {rank: int(role_id) for rank, role_id in config["RANK_ROLES2"].items()}
 VERIFIED_ROLE = config["VERIFIED_ROLE"]
+BIG_WIG_ROLE = config["BIG_WIG_ROLE"]
 DB_PATH = str(pathlib.Path(__file__).parent.parent.resolve()) + config["DB_PATH"]
 DEBUG = config["DEBUG"]
 
@@ -79,17 +80,20 @@ class GameAuthCog(commands.Cog):
         self.rank_roles = RANK_ROLES
         self.rank_roles2 = RANK_ROLES2
         self.verified_role = VERIFIED_ROLE
+        self.big_wig_role = BIG_WIG_ROLE
         self.auth_requests = {}
         self.color = 0xDE1919
         self.session = aiohttp.ClientSession(headers={'x-api-key': secret.get('apikey')})
         self.bot.loop.create_task(self.create_db())
         self.bot.loop.create_task(self.create_boost_table())
         self.scheduled_rank_update.start()
+        self.pass_check_task.start()
         self.web_app = web.Application()
         self.web_app.add_routes([
             web.get('/ltd2', self.verify_endpoint),
             web.get('/verify-boost', self.verify_boost_endpoint),
-            web.get('/player-id', self.player_id_endpoint)
+            web.get('/player-id', self.player_id_endpoint),
+            web.get('/big-wig', self.big_wig_endpoint)
         ])
         self.runner = web.AppRunner(self.web_app)
         self.bot.loop.create_task(self.start_server())
@@ -159,6 +163,102 @@ class GameAuthCog(commands.Cog):
             else:
                 return web.json_response({"error": "User not found"}, status=404)
 
+    async def big_wig_endpoint(self, request):
+        # Get the playfab_id and ticks from the query string
+        playfab_id = request.query.get("playFabId")
+        pass_active_until_ticks = request.query.get("ticks")
+        if not playfab_id:
+            return web.json_response({"error": "Missing playfab_id"}, status=400)
+
+        async with aiosqlite.connect(self.db_path) as db:
+            # Check if user exists with this playfab_id
+            cursor = await db.execute("SELECT discord_id, discord_name FROM users WHERE player_id = ?", (playfab_id,))
+            row = await cursor.fetchone()
+
+            if row:
+                discord_id, discord_name = row
+                print(f"{discord_name} bought the Big Wig Pass!")
+                # User exists, update the pass_active_until_ticks column
+                if pass_active_until_ticks:
+                    await db.execute("UPDATE users SET pass_active_until_ticks = ? WHERE player_id = ?", 
+                                    (pass_active_until_ticks, playfab_id))
+                    await db.commit()
+                
+                # If user has Discord ID, check and update BIG_WIG_ROLE immediately
+                if discord_id:
+                    await self.update_user_big_wig_role(discord_id, pass_active_until_ticks)
+                
+                return web.json_response({"status": "updated", "player_id": playfab_id})
+            else:
+                # User doesn't exist, create a new row with default values
+                await db.execute("""
+                    INSERT INTO users (player_id, pass_active_until_ticks, discord_id, discord_name, ingame_name, rank)
+                    VALUES (?, ?, NULL, NULL, NULL, NULL)
+                """, (playfab_id, pass_active_until_ticks or None))
+                await db.commit()
+                return web.json_response({"status": "valid", "player_id": playfab_id})
+
+    async def update_user_big_wig_role(self, discord_id, pass_active_until_ticks):
+        """Update BIG_WIG_ROLE for a specific user and send DM notification"""
+        try:
+            guild = self.bot.get_guild(self.guild_id)
+            if not guild:
+                return
+            
+            big_wig_role = guild.get_role(self.big_wig_role)
+            if not big_wig_role:
+                print("BIG_WIG_ROLE not found")
+                return
+            
+            member = guild.get_member(int(discord_id))
+            if not member:
+                return
+            
+            # Convert current time to .NET ticks
+            dotnet_epoch = datetime(1, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+            current_time = datetime.now(timezone.utc)
+            time_diff = current_time - dotnet_epoch
+            current_time_ticks = int(time_diff.total_seconds() * 10000000)
+            
+            has_big_wig_role = big_wig_role in member.roles
+            pass_active = pass_active_until_ticks and int(pass_active_until_ticks) > current_time_ticks
+            
+            if pass_active and not has_big_wig_role:
+                # Grant BIG_WIG_ROLE
+                await member.add_roles(big_wig_role)
+                print(f"Granted BIG_WIG_ROLE to {member.display_name}")
+                
+                # Send DM notification
+                embed = discord.Embed(
+                    color=self.color, 
+                    description=f"**{member.mention}** You received the Big Wig pass role! Thank you for your support!"
+                )
+                embed.set_author(name="Legion TD 2 Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+                try:
+                    await member.send(embed=embed)
+                except Exception:
+                    await self.send_warn_to_channel(f"{member.mention} You received the Big Wig pass role! Thank you for your support!")
+                    
+            elif not pass_active and has_big_wig_role:
+                # Remove BIG_WIG_ROLE
+                await member.remove_roles(big_wig_role)
+                print(f"Removed BIG_WIG_ROLE from {member.display_name}")
+                
+                # Send DM notification
+                embed = discord.Embed(
+                    color=self.color, 
+                    description=f"**{member.mention}** Your Big Wig pass has expired. Thank you for your support!"
+                )
+                embed.set_author(name="Legion TD 2 Big Wig", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+                try:
+                    await member.send(embed=embed)
+                except Exception:
+                    await self.send_warn_to_channel(f"{member.mention} Your Big Wig pass has expired.")
+                    
+        except Exception as e:
+            print(f"Error updating BIG_WIG_ROLE for user {discord_id}: {e}")
+            traceback.print_exc()
+
     async def create_db(self):
         async with aiosqlite.connect(self.db_path) as db:
             await db.execute("""
@@ -167,10 +267,19 @@ class GameAuthCog(commands.Cog):
                     player_id TEXT UNIQUE,
                     discord_name TEXT,
                     ingame_name TEXT,
-                    rank TEXT
+                    rank TEXT,
+                    pass_active_until_ticks TEXT
                 )
             """)
             await db.commit()
+            
+            # Migration: Add pass_active_until_ticks column if it doesn't exist
+            try:
+                await db.execute("ALTER TABLE users ADD COLUMN pass_active_until_ticks TEXT")
+                await db.commit()
+            except aiosqlite.OperationalError:
+                # Column already exists, ignore the error
+                pass
 
     async def create_boost_table(self):
         async with aiosqlite.connect(self.db_path) as db:
@@ -188,6 +297,7 @@ class GameAuthCog(commands.Cog):
         await self.runner.cleanup()
         await self.session.close()
         self.scheduled_rank_update.cancel()
+        self.pass_check_task.cancel()
     
     async def send_warn_to_channel(self, message):
         channel_ids = await get_channels(self.guild_id)
@@ -248,7 +358,7 @@ class GameAuthCog(commands.Cog):
                 async with db.execute("SELECT discord_id FROM users WHERE player_id = ?", (player_id,)) as cursor:
                     result = await cursor.fetchone()
                 
-                if result and result[0] != str(discord_user_id):
+                if result and result[0] is not None and result[0] != str(discord_user_id):
                     embed = discord.Embed(color=self.color, description=f"**{member.mention}** This game account is already linked to another Discord account.")
                     embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
                     try:
@@ -256,10 +366,29 @@ class GameAuthCog(commands.Cog):
                     except Exception:
                         await self.send_warn_to_channel(f"{member.mention} This game account is already linked to another Discord account.")
                     return False
-                await db.execute("""
-                    INSERT OR REPLACE INTO users (discord_id, player_id, discord_name, ingame_name, rank)
-                    VALUES (?, ?, ?, ?, ?)
-                """, (discord_user_id, player_id, member.display_name, playername, rank))
+                
+                # Check if there's already a row for this discord_user_id
+                async with db.execute("SELECT player_id FROM users WHERE discord_id = ?", (str(discord_user_id),)) as cursor:
+                    existing_discord_user = await cursor.fetchone()
+                
+                if existing_discord_user:
+                    # Update existing discord user's player_id
+                    await db.execute("""
+                        UPDATE users SET player_id = ?, discord_name = ?, ingame_name = ?, rank = ?
+                        WHERE discord_id = ?
+                    """, (player_id, member.display_name, playername, rank, discord_user_id))
+                elif result and result[0] is None:
+                    # Update existing player_id row with discord info
+                    await db.execute("""
+                        UPDATE users SET discord_id = ?, discord_name = ?, ingame_name = ?, rank = ?
+                        WHERE player_id = ?
+                    """, (discord_user_id, member.display_name, playername, rank, player_id))
+                else:
+                    # Create new row
+                    await db.execute("""
+                        INSERT INTO users (discord_id, player_id, discord_name, ingame_name, rank)
+                        VALUES (?, ?, ?, ?, ?)
+                    """, (discord_user_id, player_id, member.display_name, playername, rank))
                 await db.commit()
             
             if rank_role_id:
@@ -456,6 +585,19 @@ class GameAuthCog(commands.Cog):
         response = f"Rank role toggled."
         await interaction.followup.send(response, ephemeral=True)
     
+    @app_commands.command(name="check-passes", description="Manually check and update BIG_WIG_ROLE for all users.")
+    async def check_passes(self, interaction: discord.Interaction):
+        if interaction.user.name != "drachir_":
+            await interaction.response.send_message("You don't have permission to use this command.", ephemeral=True)
+            return
+        
+        await interaction.response.defer(ephemeral=True)
+        
+        # Trigger the pass check task manually
+        await self.pass_check_task()
+        
+        await interaction.followup.send("Pass check completed!", ephemeral=True)
+    
     @tasks.loop(time=time(hour=22, minute=0, second=0, tzinfo=timezone.utc))
     async def scheduled_rank_update(self):
         print(f"Updating discord ranks...")
@@ -507,6 +649,66 @@ class GameAuthCog(commands.Cog):
     
     @scheduled_rank_update.before_loop
     async def before_scheduled_rank_update(self):
+        await self.bot.wait_until_ready()
+    
+    @tasks.loop(minutes=5)  # Check every 5 minutes
+    async def pass_check_task(self):
+        """Check pass_active_until_ticks and grant/remove BIG_WIG_ROLE accordingly"""
+        try:
+            guild = self.bot.get_guild(self.guild_id)
+            if not guild:
+                return
+            
+            big_wig_role = guild.get_role(self.big_wig_role)
+            if not big_wig_role:
+                print("BIG_WIG_ROLE not found")
+                return
+            
+            # Convert current time to .NET ticks
+            # .NET ticks = (datetime - DateTime.MinValue).TotalMilliseconds * 10000
+            # DateTime.MinValue is January 1, 0001 00:00:00
+            dotnet_epoch = datetime(1, 1, 1, 0, 0, 0, tzinfo=timezone.utc)
+            current_time = datetime.now(timezone.utc)
+            time_diff = current_time - dotnet_epoch
+            current_time_ticks = int(time_diff.total_seconds() * 10000000)
+            
+            async with aiosqlite.connect(self.db_path) as db:
+                # Get all users with discord_id and pass_active_until_ticks
+                async with db.execute("""
+                    SELECT discord_id, pass_active_until_ticks 
+                    FROM users 
+                    WHERE discord_id IS NOT NULL AND pass_active_until_ticks IS NOT NULL
+                """) as cursor:
+                    users = await cursor.fetchall()
+            
+            for discord_id, pass_ticks in users:
+                try:
+                    member = guild.get_member(int(discord_id))
+                    if not member:
+                        continue
+                    
+                    has_big_wig_role = big_wig_role in member.roles
+                    pass_active = int(pass_ticks) > current_time_ticks
+                    
+                    if pass_active and not has_big_wig_role:
+                        # Grant BIG_WIG_ROLE
+                        await member.add_roles(big_wig_role)
+                        print(f"Granted BIG_WIG_ROLE to {member.display_name}")
+                    elif not pass_active and has_big_wig_role:
+                        # Remove BIG_WIG_ROLE
+                        await member.remove_roles(big_wig_role)
+                        print(f"Removed BIG_WIG_ROLE from {member.display_name}")
+                        
+                except Exception as e:
+                    print(f"Error processing BIG_WIG_ROLE for user {discord_id}: {e}")
+                    continue
+                    
+        except Exception as e:
+            print(f"Error in pass_check_task: {e}")
+            traceback.print_exc()
+    
+    @pass_check_task.before_loop
+    async def before_pass_check_task(self):
         await self.bot.wait_until_ready()
 
 async def setup(bot:commands.Bot):
