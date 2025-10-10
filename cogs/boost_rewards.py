@@ -45,10 +45,10 @@ class BoostRewardsCog(commands.Cog):
 
     @commands.Cog.listener()
     async def on_member_update(self, before: discord.Member, after: discord.Member):
-        if before.display_name.casefold() in ["dani", "jules", "lisk", "drachir", "dani (private / off work)"]:
+        if before.display_name.casefold() in ["dani", "jules", "lisk", "dani (private / off work)"]:
             return
         if not before.premium_since and after.premium_since:
-            code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+            code = 'boost_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
             boost_start = after.premium_since.isoformat()
             current_month = datetime.utcnow().strftime("%Y-%m")
 
@@ -64,7 +64,7 @@ class BoostRewardsCog(commands.Cog):
             try:
                 await after.send(
                     f"Thanks for boosting our server ❤️\n"
-                    f"Enter this in the LegionTD2 Global Chat to claim a reward! `/redeem {code}`\n"
+                    f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{code}```\n"
                     f"-# The code expires in a month."
                 )
             except Exception:
@@ -83,7 +83,9 @@ class BoostRewardsCog(commands.Cog):
                 row = await cursor.fetchone()
 
         if row and row[0]:
-            await interaction.followup.send(f"Your active boost reward code is: `/redeem {row[0]}`", ephemeral=True)
+            await interaction.followup.send(f"How to redeem your Boost reward:\n"
+                                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{row[0]}```\n"
+                                            , ephemeral=True)
         else:
             await interaction.followup.send("No active code found for you. You will get a code every month you boost the LTD2 discord.", ephemeral=True)
 
@@ -97,6 +99,7 @@ class BoostRewardsCog(commands.Cog):
         now = datetime.now(timezone.utc)
 
         async with aiosqlite.connect(self.db_path) as db:
+            # To test monthly boost check uncomment this and use ?testboostmonth
             # async with db.execute("SELECT discord_id FROM boost_codes") as cursor:
             #     rows = await cursor.fetchall()
             #
@@ -119,7 +122,7 @@ class BoostRewardsCog(commands.Cog):
                 if not row:
                     # New booster who hasn't received any rewards yet
                     boost_start = member.premium_since.isoformat() if member.premium_since else now.isoformat()
-                    new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+                    new_code = 'boost_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
                     new_reward_month = now.strftime("%Y-%m")
 
                     await db.execute("""
@@ -133,7 +136,7 @@ class BoostRewardsCog(commands.Cog):
                     try:
                         await member.send(
                             f"Thanks for boosting our server ❤️\n"
-                            f"Enter this in the LegionTD2 Global Chat to claim a reward! `/redeem {new_code}`\n"
+                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{new_code}```\n"
                             f"-# The code expires in a month."
                         )
                     except discord.HTTPException:
@@ -170,7 +173,7 @@ class BoostRewardsCog(commands.Cog):
                         give_reward = True
 
                 if give_reward:
-                    new_code = ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
+                    new_code = 'boost_' + ''.join(random.choices(string.ascii_uppercase + string.digits, k=16))
                     new_reward_month = now.strftime("%Y-%m")
 
                     print(f"{member.display_name} continued boosting the server!")
@@ -185,7 +188,7 @@ class BoostRewardsCog(commands.Cog):
                     try:
                         await member.send(
                             f"Thanks for continuing to boost our server this month! 🎉\n"
-                            f"Enter this in the LegionTD2 Global Chat to claim a reward! `/redeem {new_code}`\n"
+                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{new_code}```\n"
                             f"-# The code expires in a month."
                         )
                     except discord.HTTPException:
@@ -229,7 +232,7 @@ class BoostRewardsCog(commands.Cog):
             display_name="",
             premium_since=None,
             mention=member.mention,
-            send=lambda msg: ctx.send(f"(Simulated DM to {member.display_name}): {msg}")
+            send=lambda msg: ctx.send(f"{msg}")
         )
 
         after = SimpleNamespace(
@@ -237,7 +240,7 @@ class BoostRewardsCog(commands.Cog):
             display_name="",
             premium_since=now - timedelta(days=1),
             mention=member.mention,
-            send=lambda msg: ctx.send(f"(Simulated DM to {member.display_name}): {msg}")
+            send=lambda msg: ctx.send(f"{msg}")
         )
 
         await self.on_member_update(before, after)
@@ -247,7 +250,7 @@ class BoostRewardsCog(commands.Cog):
     @commands.has_permissions(administrator=True)
     async def testboostmonth(self, ctx, member: discord.Member = None):
         member = member or ctx.author
-        now = datetime.utcnow()
+        now = datetime.now(tz=timezone.utc)
         fake_boost_start = (now - timedelta(days=32)).replace(hour=0, minute=0, second=0)
 
         async with aiosqlite.connect(self.db_path) as db:
