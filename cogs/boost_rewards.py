@@ -64,7 +64,7 @@ class BoostRewardsCog(commands.Cog):
             try:
                 await after.send(
                     f"Thanks for boosting our server ❤️\n"
-                    f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{code}```\n"
+                    f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://clan.fastly.steamstatic.com/images/25043759/1e114e65c45381d9ed77113388052e8d8513440f.png):\n```{code}```\n"
                     f"-# The code expires in a month."
                 )
             except Exception:
@@ -84,7 +84,7 @@ class BoostRewardsCog(commands.Cog):
 
         if row and row[0]:
             await interaction.followup.send(f"How to redeem your Boost reward:\n"
-                                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{row[0]}```\n"
+                                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://clan.fastly.steamstatic.com/images/25043759/1e114e65c45381d9ed77113388052e8d8513440f.png):\n```{row[0]}```\n"
                                             , ephemeral=True)
         else:
             await interaction.followup.send("No active code found for you. You will get a code every month you boost the LTD2 discord.", ephemeral=True)
@@ -136,7 +136,7 @@ class BoostRewardsCog(commands.Cog):
                     try:
                         await member.send(
                             f"Thanks for boosting our server ❤️\n"
-                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{new_code}```\n"
+                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://clan.fastly.steamstatic.com/images/25043759/1e114e65c45381d9ed77113388052e8d8513440f.png):\n```{new_code}```\n"
                             f"-# The code expires in a month."
                         )
                     except discord.HTTPException:
@@ -188,7 +188,7 @@ class BoostRewardsCog(commands.Cog):
                     try:
                         await member.send(
                             f"Thanks for continuing to boost our server this month! 🎉\n"
-                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://i.imgur.com/riMo22q.png):\n```{new_code}```\n"
+                            f"**Open Legion TD 2** and enter this code in the [Help Menu -> Redeem Coupon Code](https://clan.fastly.steamstatic.com/images/25043759/1e114e65c45381d9ed77113388052e8d8513440f.png):\n```{new_code}```\n"
                             f"-# The code expires in a month."
                         )
                     except discord.HTTPException:

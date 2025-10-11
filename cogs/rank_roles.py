@@ -316,13 +316,13 @@ class GameAuthCog(commands.Cog):
             "user": interaction.user,
             "channel": interaction.channel,
         }
-        text_string = f"**{interaction.user.mention}** **Open Legion TD 2** and enter this code in the\n[Help Menu -> Link Discord Account](https://i.imgur.com/bG4gNFn.png):\n```{code}```"
+        text_string = f"**{interaction.user.mention}** **Open Legion TD 2** and enter this code in the\n[Help Menu -> Link Discord Account](https://clan.fastly.steamstatic.com/images/25043759/faa6f98a235b7583e5307792b346a52e909f5876.png):\n```{code}```"
         if text_output:
             await interaction.followup.send(text_string, ephemeral=True)
         else:
             embed = discord.Embed(color=self.color, description=text_string)
             embed.set_author(name="Legion TD 2 Rank Roles", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
-            embed.set_image(url="https://i.imgur.com/bG4gNFn.png")
+            embed.set_image(url="https://clan.fastly.steamstatic.com/images/25043759/faa6f98a235b7583e5307792b346a52e909f5876.png")
             await interaction.followup.send(embed=embed, ephemeral=True)
     
     async def get_player_api_stats(self, player_id):
