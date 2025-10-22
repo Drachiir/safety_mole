@@ -120,7 +120,7 @@ class Listener(commands.Cog):
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
                             output_string += f"\n**Channel: {msg.channel.name}** | {d_timestamp}\n{msg.content}"
                             await msg.delete()
-                        embed = discord.Embed(color=0xDE1919, description=output_string)
+                        embed = discord.Embed(color=0xDE1919, description=output_string[:4096])
                         channel_ids = modcog.get_channels(message.guild.id)
                         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
                         await modlogs.send(embed=embed)
