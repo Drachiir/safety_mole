@@ -609,6 +609,10 @@ class GameAuthCog(commands.Cog):
                     all_users = await cursor.fetchall()
             guild = self.bot.get_guild(self.guild_id)
             for discord_id, player_id, current_rank, ingame_name in all_users:
+
+                if not discord_id: #ppl that didnt link, but have an entry because they bought the bigwigpass
+                    continue
+
                 await asyncio.sleep(0.5)
                 stats = await self.get_player_api_stats2(player_id)
                 if not stats:
