@@ -177,7 +177,10 @@ class GameAuthCog(commands.Cog):
 
             if row:
                 discord_id, discord_name = row
-                print(f"{discord_name} bought the Big Wig Pass!")
+                if discord_name:
+                    print(f"{discord_name} bought the Big Wig Pass!")
+                else:
+                    print(f"{playfab_id} bought the Big Wig Pass!")
                 # User exists, update the pass_active_until_ticks column
                 if pass_active_until_ticks:
                     await db.execute("UPDATE users SET pass_active_until_ticks = ? WHERE player_id = ?", 
