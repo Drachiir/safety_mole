@@ -177,6 +177,7 @@ class ModMail(commands.Cog):
                         self.pending_confirmations.discard(message.author.id)
 
                     await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
+                                               "\n🎄 Holiday Notice: Between **20th December and 5th January**, support requests may not be answered or may experience significant delays."
                                                "\n⚠️ Please make sure to have DMs enabled to receive a response."
                                                "\n📨 Messages are marked with ✅ if they were sent to the support team."
                                                "\n📃 Responses will appear here, you can add additional messages:")
