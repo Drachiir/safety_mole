@@ -313,7 +313,7 @@ class ContextMenu(commands.Cog):
             for channel in interaction.guild.text_channels:
                 if channel.category:
                     excluded_keywords = [
-                        "staff", "moderation", "info", "new players",
+                        "staff", "moderation", "info",
                         "community helper", "tournament casters",
                         "debug", "other", "archived", "voice"
                     ]
