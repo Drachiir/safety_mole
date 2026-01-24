@@ -60,9 +60,12 @@ class Listener(commands.Cog):
 
             try:
                 response = await self.openai_client.chat.completions.create(
-                    model="gpt-4o",
-                    messages=[{"role": "user", "content": prompt}],
-                    temperature=0
+                    model="gpt-5-mini-2025-08-07",
+                    messages=
+                    [
+                        {"role": "system", "content": "You are a community moderator for Legion TD 2"},
+                        {"role": "user", "content": prompt}
+                    ]
                 )
             except openai.RateLimitError as e:
                 print(f"OpenAI Ratelimit: {e}")
