@@ -282,15 +282,24 @@ class Moderation(commands.Cog):
             traceback.print_exc()
             await interaction.followup.send(f"Cannot unmute {user.mention}.", ephemeral=True)
             return
-        modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
-        await modlogs.send(embed=embed)
+        # Send followup FIRST, before doing mod logs or DMs
+        await interaction.followup.send(f"{user.mention} has been unmuted.", ephemeral=True)
+        
+        # Then send mod logs
+        modlogs = self.bot.get_channel(channel_ids["mod_logs"])
+        if modlogs:
+            try:
+                await modlogs.send(embed=embed)
+            except Exception:
+                pass
+        
+        # And send DM to user
         embed2 = discord.Embed(color=0x2BDE19, title=f"You have been unmuted.\n")
         embed2.set_author(name=f"{interaction.guild.name} Discord Server", icon_url=interaction.guild.icon.url)
         try:
             await user.send(embed=embed2)
         except Exception:
             pass
-        await interaction.followup.send(f"{user.mention} has been unmuted.", ephemeral=True)
     
     @app_commands.command(name="proxy", description="Uses Safety Mole to write a message in a given channel.")
     @app_commands.guild_only()
