@@ -8,8 +8,6 @@ import discord_timestamps
 from discord import app_commands
 from discord.ext import commands, tasks
 from openai import AsyncOpenAI
-import aiohttp
-from io import BytesIO
 
 import cogs.moderation as modcog
 from discord_timestamps import TimestampType
@@ -127,16 +125,19 @@ class Listener(commands.Cog):
                                          f"\n{message.author.name} (Muted for 7 day)"
                                          f"\n**User id:** {message.author.id}"
                                          f"\n**Deleted messages:**")
-                        image_urls = []
+                        image_files = []
                         for msg in self.messages[message.author.id]:
                             d_timestamp = discord_timestamps.format_timestamp(msg.created_at.timestamp(), TimestampType.RELATIVE)
                             output_string += f"\n**Channel: {msg.channel.name}** | {d_timestamp}\n{msg.content}"
-                            # Collect first 2 images
-                            if len(image_urls) < 2:
+                            # Collect first 2 images BEFORE deleting
+                            if len(image_files) < 2:
                                 for att in msg.attachments:
                                     if att.content_type and att.content_type.startswith('image/'):
-                                        image_urls.append(att.url)
-                                        if len(image_urls) >= 2:
+                                        try:
+                                            image_files.append(await att.to_file())
+                                        except Exception:
+                                            pass
+                                        if len(image_files) >= 2:
                                             break
                             await msg.delete()
                         embed = discord.Embed(color=0xDE1919, description=output_string[:4096])
@@ -144,21 +145,8 @@ class Listener(commands.Cog):
                         modlogs = await self.bot.fetch_channel(channel_ids["mod_logs"])
                         await modlogs.send(embed=embed)
                         # Send images as file attachments in a separate message
-                        if len(image_urls) > 0:
-                            files = []
-                            async with aiohttp.ClientSession() as session:
-                                for i, url in enumerate(image_urls[:2]):
-                                    try:
-                                        async with session.get(url) as resp:
-                                            if resp.status == 200:
-                                                data = await resp.read()
-                                                # Get file extension from URL or default to png
-                                                ext = url.split('.')[-1].split('?')[0] if '.' in url else 'png'
-                                                files.append(discord.File(BytesIO(data), filename=f"spam_image_{i+1}.{ext}"))
-                                    except Exception:
-                                        pass
-                            if files:
-                                await modlogs.send(files=files)
+                        if image_files:
+                            await modlogs.send(files=image_files)
                         embed2 = discord.Embed(color=0xDE1919, title=f"You have been muted for spam-bot like behavior. Duration: 7 Days\n"
                                                                      f"If your account was compromised, you can appeal your mute by writing a message here.")
                         embed2.set_author(name="Legion TD 2 Discord Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")

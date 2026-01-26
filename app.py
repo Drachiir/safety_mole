@@ -4,8 +4,8 @@ import discord
 from discord.ext import commands
 import logging
 
-handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
-discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
+# handler = logging.FileHandler(filename='discord.log', encoding='utf-8', mode='w')
+# discord.utils.setup_logging(handler=handler, level=logging.INFO, root=False)
 
 with open('Files/json/Secrets.json') as f:
     secret_file = json.load(f)
