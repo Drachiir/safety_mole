@@ -274,10 +274,10 @@ class ModMail(commands.Cog):
                     finally:
                         self.pending_confirmations.discard(message.author.id)
 
-                    await message.channel.send("✅ Your request has been sent to the Support team. (Expected response time <24h, but can take longer)"
-                                               "\n⚠️ Please make sure to have DMs enabled to receive a response."
+                    await message.channel.send("✅ Your message has been sent to the Support team."
+                                               "\n-# Expected response time is <24h, weekends/holidays excluded."
                                                "\n📨 Messages are marked with ✅ if they were sent to the support team."
-                                               "\n📃 Responses will appear here, you can add additional messages:")
+                                               "\n📃 Responses will appear below, and you may add additional messages:")
                     # Find "In Progress" tag to apply to new threads
                     applied_tags = [tag for tag in forum_channel.available_tags if tag.name == "In Progress"]
                     thread = await forum_channel.create_thread(name=f"Support Request - {message.author.display_name} / {message.author.name}",
@@ -419,6 +419,34 @@ class ModMail(commands.Cog):
                 thread = await guild.fetch_channel(int(thread_id))
                 if thread and forum_channel:
                     await edit_webhook_message(forum_channel, thread, webhook_message_id, after.content)
+            except Exception:
+                traceback.print_exc()
+
+    @commands.Cog.listener()
+    async def on_thread_update(self, before: discord.Thread, after: discord.Thread):
+        """Automatically close thread when 'done' tag is applied."""
+        # Check if this is a modmail thread
+        channel_ids = modcog.get_channels(self.bot.guild_id)
+        if after.parent_id != channel_ids["mod_mail"]:
+            return
+        
+        # Check if the thread is already archived/locked
+        if after.archived or after.locked:
+            return
+        
+        # Get tag names before and after
+        before_tags = {tag.name.lower() for tag in before.applied_tags}
+        after_tags = {tag.name.lower() for tag in after.applied_tags}
+        
+        # Check if "done" tag was just added
+        if "done" in after_tags and "done" not in before_tags:
+            try:
+                # Remove "In Progress" tag if present (keep all others, including "done")
+                updated_tags = [t for t in after.applied_tags if t.name.lower() != "in progress"]
+
+                # Archive and lock the thread
+                await after.edit(archived=True, applied_tags=updated_tags)
+                
             except Exception:
                 traceback.print_exc()
 
