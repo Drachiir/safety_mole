@@ -236,7 +236,7 @@ class GameAuthCog(commands.Cog):
                     color=self.color, 
                     description=f"**{member.mention}** You received the Big Wig pass role! Thank you for your support!"
                 )
-                embed.set_author(name="Legion TD 2 Server", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+                embed.set_author(name="Legion TD 2 Big Wig", icon_url="https://cdn.legiontd2.com/icons/BigWig.png")
                 try:
                     await member.send(embed=embed)
                 except Exception:
@@ -250,9 +250,9 @@ class GameAuthCog(commands.Cog):
                 # Send DM notification
                 embed = discord.Embed(
                     color=self.color, 
-                    description=f"**{member.mention}** Your Big Wig pass has expired. Thank you for your support!"
+                    description=f"**{member.mention}** Your Big Wig pass has expired."
                 )
-                embed.set_author(name="Legion TD 2 Big Wig", icon_url="https://cdn.legiontd2.com/icons/DefaultAvatar.png")
+                embed.set_author(name="Legion TD 2 Big Wig", icon_url="https://cdn.legiontd2.com/icons/BigWig.png")
                 try:
                     await member.send(embed=embed)
                 except Exception:
@@ -659,7 +659,7 @@ class GameAuthCog(commands.Cog):
     async def before_scheduled_rank_update(self):
         await self.bot.wait_until_ready()
     
-    @tasks.loop(minutes=5)  # Check every 5 minutes
+    @tasks.loop(minutes=2)  # Check every 5 minutes
     async def pass_check_task(self):
         """Check pass_active_until_ticks and grant/remove BIG_WIG_ROLE accordingly"""
         try:
