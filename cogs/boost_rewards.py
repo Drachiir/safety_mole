@@ -72,7 +72,7 @@ class BoostRewardsCog(commands.Cog):
                 botmsgs = await self.bot.fetch_channel(channel_ids["public_warn"])
                 if botmsgs:
                     await botmsgs.send(
-                        f"{after.mention}, We tried to send you your boost reward code, but DMs are disabled. Use `/boost-reward` to retrieve it!"
+                        f"{after.mention}, we tried to send you your boost reward code, but your DMs were disabled. Use `/boost-reward` to retrieve it!"
                     )
 
     @app_commands.command(name="boost-reward", description="Get your reward for boosting the LTD2 discord server.")
@@ -197,7 +197,7 @@ class BoostRewardsCog(commands.Cog):
                             if channel_ids and "public_warn" in channel_ids:
                                 channel = await self.bot.fetch_channel(channel_ids["public_warn"])
                                 await channel.send(
-                                    f"{member.mention}, we tried to send your monthly boost reward, but DMs are disabled. "
+                                    f"{member.mention}, we tried to send your monthly boost reward, but your DMs were disabled. "
                                     f"Use `/boost-reward` to retrieve it!"
                                 )
                         except Exception:
