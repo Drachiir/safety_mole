@@ -186,7 +186,7 @@ class ContextMenu(commands.Cog):
             return
         deleted_messages_log = []
         if reason.lower() in ["spam", "scam"]:
-            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=2)
             for channel in interaction.guild.text_channels:
                 if channel.category:
                     excluded_keywords = [
@@ -210,7 +210,7 @@ class ContextMenu(commands.Cog):
             deleted_messages_text = "\n".join(deleted_messages_log)
             messages_embed = discord.Embed(
                 color=0xFF4500,
-                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                title=f"Deleted Messages from {user.display_name}\nLast 2 hour, reason: {reason}",
                 description=deleted_messages_text[:4096]
             )
             await modlogs.send(embed=messages_embed)
@@ -308,7 +308,7 @@ class ContextMenu(commands.Cog):
             return
         deleted_messages_log = []
         if reason.lower() in ["spam", "scam"]:
-            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=1)
+            one_hour_ago = datetime.now(tz=timezone.utc) - timedelta(hours=2)
             
             for channel in interaction.guild.text_channels:
                 if channel.category:
@@ -334,7 +334,7 @@ class ContextMenu(commands.Cog):
             deleted_messages_text = "\n".join(deleted_messages_log)
             messages_embed = discord.Embed(
                 color=0xFF4500,
-                title=f"Deleted Messages from {user.display_name}\nLast 1 hour, reason: spam",
+                title=f"Deleted Messages from {user.display_name}\nLast 2 hour, reason: {reason}",
                 description=deleted_messages_text[:4096]
             )
             await modlogs.send(embed=messages_embed)
