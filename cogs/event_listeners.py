@@ -115,7 +115,7 @@ class Listener(commands.Cog):
                         elif msg.created_at < date_clean:
                             self.messages[message.author.id].remove(msg)
                     # Trigger on either: 5+ channels OR 2+ channels with 6+ images (2 per message)
-                    if len(channels) >= self.spam_threshold or (len(channels) >= 2 and image_count >= 8):
+                    if len(channels) >= self.spam_threshold or (len(channels) >= 2 and image_count >= 6):
                         try:
                             await message.author.timeout(timedelta(days=7), reason="Likely spam bot")
                         except Exception:
